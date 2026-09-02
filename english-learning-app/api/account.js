@@ -75,6 +75,21 @@ export default async function handler(req,res){
       }catch(error){if(error?.code==='23505'){json(res,409,{error:'username_taken'});return}throw error}
     }
 
+    if(action==='reset-password'){
+      const admin=await currentUser(req);
+      if(!admin||admin.role!=='admin'){json(res,403,{error:'admin_required'});return}
+      const targetId=String(body.userId||'').trim();
+      const password=validatePassword(body.password);
+      const target=await pool.query('SELECT id,username,role FROM app_users WHERE id=$1 AND is_active=true LIMIT 1',[targetId]);
+      const user=target.rows?.[0];
+      if(!user){json(res,404,{error:'user_not_found'});return}
+      if(user.role==='admin'){json(res,403,{error:'cannot_reset_admin'});return}
+      const {salt,hash}=hashPassword(password);
+      await pool.query('UPDATE app_users SET password_salt=$1,password_hash=$2 WHERE id=$3',[salt,hash,user.id]);
+      await pool.query('DELETE FROM app_sessions WHERE user_id=$1',[user.id]);
+      json(res,200,{ok:true,user:{id:user.id,username:user.username},passwordReset:true});return;
+    }
+
     if(action==='reset-user'){
       const admin=await currentUser(req);
       if(!admin||admin.role!=='admin'){json(res,403,{error:'admin_required'});return}

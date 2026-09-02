@@ -75,6 +75,19 @@ export default async function handler(req,res){
       }catch(error){if(error?.code==='23505'){json(res,409,{error:'username_taken'});return}throw error}
     }
 
+    if(action==='reset-user'){
+      const admin=await currentUser(req);
+      if(!admin||admin.role!=='admin'){json(res,403,{error:'admin_required'});return}
+      const targetId=String(body.userId||'').trim();
+      const target=await pool.query("SELECT id,username,role FROM app_users WHERE id=$1 AND is_active=true LIMIT 1",[targetId]);
+      const user=target.rows?.[0];
+      if(!user){json(res,404,{error:'user_not_found'});return}
+      if(user.role==='admin'){json(res,403,{error:'cannot_reset_admin'});return}
+      await pool.query("UPDATE learner_state SET state='{}'::jsonb, revision=revision+1, updated_at=now() WHERE user_id=$1",[user.id]);
+      await pool.query('DELETE FROM app_sessions WHERE user_id=$1',[user.id]);
+      json(res,200,{ok:true,user:{id:user.id,username:user.username},reset:true});return;
+    }
+
     if(action==='list-users'){
       const admin=await currentUser(req);
       if(!admin||admin.role!=='admin'){json(res,403,{error:'admin_required'});return}

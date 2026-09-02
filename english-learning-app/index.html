@@ -7,10 +7,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="description" content="My English Coach - ฝึกภาษาอังกฤษบนมือถือพร้อม AI Coach แบบ $0-first">
-  <link rel="manifest" href="manifest.webmanifest?v=5">
+  <link rel="manifest" href="manifest.webmanifest?v=6">
   <title>My English Coach</title>
-  <link rel="stylesheet" href="styles.css?v=5">
-  <link rel="stylesheet" href="enhancements.css?v=5">
+  <link rel="stylesheet" href="styles.css?v=6">
+  <link rel="stylesheet" href="enhancements.css?v=6">
 </head>
 <body>
   <div class="ambient ambient-a"></div>
@@ -22,7 +22,7 @@
         <div><div class="eyebrow">MY ENGLISH</div><div class="brand-title">English Coach</div></div>
       </div>
       <div class="top-actions">
-        <span id="freeModeBadge" class="free-badge" data-mode="local">FREE · Checking AI</span>
+        <span id="freeModeBadge" class="free-badge" data-mode="local">FREE · Checking Groq</span>
         <button id="profileBtn" class="icon-btn profile-btn" type="button" aria-label="โปรไฟล์"><span>👤</span><b id="profileName">ผู้เรียน</b></button>
       </div>
     </header>
@@ -62,14 +62,14 @@
         <button id="installAppBtn" class="utility-btn" type="button">📱 ติดตั้งแอป</button>
       </div>
       <input id="backupFileInput" type="file" accept="application/json,.json" hidden>
-      <p class="zero-cost-note">$0 MODE: AI ออนไลน์ใช้เฉพาะโมเดลที่ราคา $0 หากใช้ไม่ได้จะเปลี่ยนเป็น Local Coach อัตโนมัติ ไม่มี fallback ไปบริการเสียเงิน</p>
+      <p class="zero-cost-note">$0 MODE: AI ออนไลน์ใช้ Groq Free Plan เท่านั้น หากโควตาฟรีหมดหรือบริการไม่พร้อมจะเปลี่ยนเป็น Local Coach อัตโนมัติ ไม่มี paid fallback</p>
 
       <div class="dialog-actions"><button value="cancel" class="secondary-btn">ปิด</button><button value="default" class="primary-btn">บันทึกชื่อ</button></div>
     </form>
   </dialog>
 
-  <script src="enhancements.js?v=5"></script>
-  <script src="app.js?v=5"></script>
-  <script src="ai-status.js?v=5"></script>
+  <script src="enhancements.js?v=6"></script>
+  <script src="app.js?v=6"></script>
+  <script src="ai-status.js?v=6"></script>
 </body>
 </html>

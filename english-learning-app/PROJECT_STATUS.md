@@ -9,6 +9,7 @@
 - AI Coach UI with coffee, travel, work, and daily-life scenarios
 - AI backend uses Groq Free Plan only; no paid-provider fallback
 - Current Groq model order: `qwen/qwen3.6-27b` → `openai/gpt-oss-20b` → Local Coach
+- Groq production AI verified from the public site: status displays `FREE Online · Groq Qwen`
 - Offline/local fallback coach when the Groq Free Plan is unavailable or rate-limited
 - FREE MODE status badge (online free-plan AI vs Local Coach)
 - Multiple learner profiles on the same device
@@ -21,7 +22,7 @@
 - Vercel Hobby project `my-english-coach-free` created through the web UI
 - GitHub → Vercel auto-deploy tested end-to-end
 - Production domain confirmed
-- `GROQ_API_KEY` added as a Production Secret in Vercel; this commit intentionally triggers a fresh production deployment so the new secret is available at runtime
+- `GROQ_API_KEY` configured as a Production Secret in Vercel
 
 ## Current zero-cost behavior
 Learner progress is stored locally in the browser/device. Each device can hold multiple learner profiles and export a backup file. This keeps the app usable at $0 even before the shared database is connected.
@@ -34,14 +35,13 @@ Learner progress is stored locally in the browser/device. Each device can hold m
 - No auto top-up and no paid fallback paths
 
 ## External connector blockers
-- Neon connector exposes camelCase parameters to ChatGPT while its backend currently expects snake_case. Even `describe_project` is rejected before reaching Neon, so schema execution remains blocked by the connector layer.
+- Neon connector previously exposed camelCase parameters while its backend expected snake_case. Re-test before applying schema.
 - Vercel project exists and deployments succeed, but the Vercel read connector has been inconsistent for the new project. GitHub deployment status remains a reliable verification path.
 - GitHub Pages automatic deployment is disabled because the linked GitHub integration cannot enable Pages for the repository.
 
 ## Next implementation steps
-1. Verify AI Coach after the production redeploy that includes `GROQ_API_KEY`.
-2. Apply `database/schema.sql` to Neon as soon as the connector parameter bug is resolved.
-3. Add secure login/sessions only after the shared database path is working.
-4. Replace local progress with Neon sync while keeping local/offline fallback.
-5. Expand beginner lessons, vocabulary, sentence patterns, and quizzes.
-6. Test with 5–10 learner profiles/devices and keep all paths within free quotas.
+1. Re-test Neon connector and apply `database/schema.sql` safely if available.
+2. Add secure login/sessions after the shared database path is working.
+3. Replace local progress with Neon sync while keeping local/offline fallback.
+4. Expand beginner lessons, vocabulary, sentence patterns, and quizzes.
+5. Test with 5–10 learner profiles/devices and keep all paths within free quotas.

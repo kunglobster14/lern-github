@@ -3,6 +3,7 @@
   const STORE_KEY='myEnglishLocalProfilesV1';
   const ACTIVE_KEY='myEnglishActiveProfileV1';
   const BACKUP_FORMAT='my-english-local-backup';
+  const MULTIUSER_MODE=new URLSearchParams(location.search).get('accountTest')==='1';
   let deferredInstallPrompt=null;
   let aiStatus={text:'FREE · Local Ready',mode:'local'};
 
@@ -20,6 +21,7 @@
   function setActiveId(id){localStorage.setItem(ACTIVE_KEY,id);}
 
   function ensureProfiles(){
+    if(MULTIUSER_MODE)return;
     let store=readStore();
     if(!store.profiles.length){
       const current=safeParse(localStorage.getItem(STATE_KEY),defaultState('ผู้เรียน'));
@@ -34,6 +36,7 @@
   }
 
   function syncActiveProfile(){
+    if(MULTIUSER_MODE)return;
     const store=readStore();
     const id=activeId();
     const index=store.profiles.findIndex(p=>p.id===id);
@@ -74,6 +77,8 @@
 
   function modelName(payload){
     const id=String(payload?.model||'');
+    if(id.includes('qwen'))return 'FREE Online · Groq Qwen';
+    if(id.includes('gpt-oss'))return 'FREE Online · Groq GPT-OSS';
     if(id.includes('nemotron-3.5-lightning-free'))return 'FREE Online · Nemotron';
     if(id.includes('ling-3.0-flash-fin-free'))return 'FREE Online · Ling';
     if(id.includes('laguna-s-2.1-free'))return 'FREE Online · Laguna';
@@ -86,9 +91,11 @@
     el.textContent=message;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),2200);
   }
 
-  ensureProfiles();
-  setInterval(syncActiveProfile,1500);
-  window.addEventListener('pagehide',syncActiveProfile);
+  if(!MULTIUSER_MODE){
+    ensureProfiles();
+    setInterval(syncActiveProfile,1500);
+    window.addEventListener('pagehide',syncActiveProfile);
+  }
 
   const nativeFetch=window.fetch.bind(window);
   window.fetch=async(...args)=>{
@@ -116,6 +123,7 @@
   };
 
   function renderProfileSelect(){
+    if(MULTIUSER_MODE)return;
     const select=document.querySelector('#profileSelect');
     if(!select)return;
     syncActiveProfile();
@@ -126,6 +134,7 @@
   function escapeText(value){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
 
   function switchProfile(id){
+    if(MULTIUSER_MODE)return;
     syncActiveProfile();
     const store=readStore();
     const profile=store.profiles.find(p=>p.id===id);
@@ -136,6 +145,7 @@
   }
 
   function addProfile(){
+    if(MULTIUSER_MODE)return;
     syncActiveProfile();
     const name=(prompt('ชื่อผู้เรียนใหม่ เช่น Student 02')||'').trim();
     if(!name)return;
@@ -147,6 +157,7 @@
   }
 
   function exportBackup(){
+    if(MULTIUSER_MODE)return;
     syncActiveProfile();
     const payload={format:BACKUP_FORMAT,version:1,exportedAt:new Date().toISOString(),activeProfileId:activeId(),store:readStore()};
     const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
@@ -157,7 +168,7 @@
   }
 
   async function importBackup(file){
-    if(!file)return;
+    if(MULTIUSER_MODE||!file)return;
     try{
       const payload=JSON.parse(await file.text());
       if(payload?.format!==BACKUP_FORMAT||!Array.isArray(payload?.store?.profiles)||!payload.store.profiles.length)throw new Error('invalid');
@@ -184,12 +195,14 @@
   window.addEventListener('appinstalled',()=>toast('ติดตั้ง My English Coach แล้ว'));
 
   document.addEventListener('DOMContentLoaded',()=>{
-    renderProfileSelect();
-    document.querySelector('#profileSelect')?.addEventListener('change',e=>switchProfile(e.target.value));
-    document.querySelector('#addProfileBtn')?.addEventListener('click',addProfile);
-    document.querySelector('#exportBackupBtn')?.addEventListener('click',exportBackup);
-    document.querySelector('#importBackupBtn')?.addEventListener('click',()=>document.querySelector('#backupFileInput')?.click());
-    document.querySelector('#backupFileInput')?.addEventListener('change',e=>importBackup(e.target.files?.[0]));
+    if(!MULTIUSER_MODE){
+      renderProfileSelect();
+      document.querySelector('#profileSelect')?.addEventListener('change',e=>switchProfile(e.target.value));
+      document.querySelector('#addProfileBtn')?.addEventListener('click',addProfile);
+      document.querySelector('#exportBackupBtn')?.addEventListener('click',exportBackup);
+      document.querySelector('#importBackupBtn')?.addEventListener('click',()=>document.querySelector('#backupFileInput')?.click());
+      document.querySelector('#backupFileInput')?.addEventListener('change',e=>importBackup(e.target.files?.[0]));
+    }
     document.querySelector('#installAppBtn')?.addEventListener('click',installApp);
     setAiBadge('FREE · Local Ready','local');
     const observer=new MutationObserver(()=>ensureAiInlineBadge());

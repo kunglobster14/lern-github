@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>English Coach Friend Voice 2.3</title>
+<style>
+:root{--bg:#07111f;--panel:#11233d;--line:#28405f;--text:#fff;--muted:#9fb0c5;--accent:#6d28d9}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(#050b14,#07111f 35%,#0a1729);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif}.wrap{max-width:900px;margin:auto;padding:18px 14px 36px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.badge{border:1px solid var(--line);padding:7px 10px;border-radius:999px}.muted{color:var(--muted)}h1{margin:2px 0}.scenarios{display:flex;gap:8px;overflow:auto;margin:14px 0}.scenarios button,.btn{border:1px solid var(--line);background:#142943;color:#fff;border-radius:14px;padding:11px 14px;cursor:pointer}.scenarios .active{outline:2px solid #8b5cf6}.panel{background:rgba(17,35,61,.96);border:1px solid var(--line);border-radius:22px;padding:18px}.voicebar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px;background:#09182b;border:1px solid var(--line);border-radius:16px;margin-bottom:14px}.start{border:0;border-radius:14px;padding:12px 16px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;font-weight:800;cursor:pointer}.start.live{background:linear-gradient(135deg,#b91c1c,#ef4444)}.dot{width:10px;height:10px;border-radius:50%;background:#64748b;display:inline-block;margin-right:6px}.dot.listen{background:#22c55e;box-shadow:0 0 12px #22c55e}.dot.wait{background:#f59e0b;box-shadow:0 0 12px #f59e0b}.dot.speak{background:#38bdf8;box-shadow:0 0 12px #38bdf8}.chat{display:flex;flex-direction:column;gap:12px;min-height:340px;max-height:58vh;overflow:auto;padding:4px}.bubble{max-width:82%;padding:13px 15px;border:1px solid var(--line);border-radius:18px;background:#152a46;line-height:1.45}.bubble.user{align-self:flex-end;background:linear-gradient(135deg,#6d28d9,#4f46e5)}.bubble small{display:block;color:#aab7c8;margin-top:6px}.meta{font-size:11px;color:#7dd3fc;margin-top:6px}.speakBtn{margin-top:8px;background:#0b1a2d;border:1px solid var(--line);color:#fff;border-radius:10px;padding:7px 10px;cursor:pointer}.composer{display:grid;grid-template-columns:auto 1fr;gap:8px;margin-top:14px}.composer input{min-width:0;background:#09182b;border:1px solid var(--line);color:#fff;border-radius:14px;padding:13px}.mic{font-size:20px;min-width:58px}.hint,.live{font-size:13px;color:var(--muted);margin-top:8px;min-height:20px}@media(max-width:560px){.bubble{max-width:92%}.wrap{padding:12px 10px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><div><div class="muted">MY ENGLISH · VOICE TEST 2.3</div><h1>English Coach · Friend Mode</h1></div><span class="badge" id="status">READY</span></div>
+  <p class="muted">พูดจบแล้วส่งเอง · AI ตอบด้วยเสียง · Hands-free เปิดไมค์รอรอบต่อไปเอง</p>
+  <div class="scenarios" id="scenarios"></div>
+  <section class="panel">
+    <div class="voicebar">
+      <button id="hands" class="start">🎙️ เริ่มคุยอัตโนมัติ</button>
+      <div><span id="dot" class="dot"></span><span id="voiceState">พร้อม</span></div>
+      <button id="mute" class="btn" type="button">🔊 เสียง AI: เปิด</button>
+    </div>
+    <div id="chat" class="chat"></div>
+    <div class="composer"><button id="mic" class="btn mic" type="button">🎤 พูด 1 ครั้ง</button><input id="input" autocomplete="off" readonly placeholder="ข้อความจากไมค์จะแสดงตรงนี้และส่งเอง"></div>
+    <div id="liveText" class="live"></div>
+    <div class="hint">ปุ่ม 🎤 = พูดหนึ่งประโยคแล้วส่งเอง · ปุ่ม 🎙️ = สนทนาต่อเนื่องจนกดหยุดเอง</div>
+  </section>
+</div>
+<script>
+(()=>{
+const PROXY='https://kxdzlbyiowspghotzjvu.supabase.co/functions/v1/english-coach-test-proxy';
+const ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZHpsYnlpb3dzcGdob3R6anZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgxODcxNjEsImV4cCI6MjEwMzc2MzE2MX0.t6u85fzw5R36hBIw1WN60pEgKvBWu2fJH8-DliJmiQA';
+const S={daily:'🌤️ ชีวิตประจำวัน',work:'💼 ที่ทำงาน',travel:'✈️ เดินทาง',restaurant:'🍽️ ร้านอาหาร'};
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let scenario='daily';
+let history=[{role:'ai',text:'Hi! Let’s chat like friends. How was your day today?',thai:'คุยกันสบาย ๆ เหมือนเพื่อนนะ วันนี้เป็นอย่างไรบ้าง?',source:'friend-starter'}];
+let hands=false,voiceOn=true,busy=false,speaking=false,listening=false,recognition=null,cycle=0;
+function setState(text,kind=''){ $('#voiceState').textContent=text; $('#dot').className='dot '+kind; }
+function render(){
+  $('#status').textContent=busy?'AI THINKING':hands?'HANDS-FREE':'READY';
+  $('#hands').classList.toggle('live',hands); $('#hands').textContent=hands?'⏹️ หยุดสนทนา':'🎙️ เริ่มคุยอัตโนมัติ';
+  $('#mute').textContent=voiceOn?'🔊 เสียง AI: เปิด':'🔇 เสียง AI: ปิด';
+  $('#scenarios').innerHTML=Object.entries(S).map(([k,v])=>`<button data-s="${k}" class="${k===scenario?'active':''}">${v}</button>`).join('');
+  $('#scenarios').querySelectorAll('button').forEach(b=>b.onclick=()=>{scenario=b.dataset.s;render()});
+  $('#chat').innerHTML=history.map((m,i)=>`<div class="bubble ${m.role==='user'?'user':''}">${esc(m.text)}${m.thai?`<small>${esc(m.thai)}</small>`:''}${m.role==='ai'?`<button class="speakBtn" data-i="${i}">🔊 ฟังซ้ำ</button>${m.source?`<div class="meta">${esc(m.source)}</div>`:''}`:''}</div>`).join('');
+  $('#chat').querySelectorAll('.speakBtn').forEach(b=>b.onclick=()=>speak(history[Number(b.dataset.i)].text,false));
+  $('#chat').scrollTop=$('#chat').scrollHeight;
+}
+function stopRecognition(){try{recognition?.abort()}catch{} listening=false; recognition=null;}
+function speak(text,resume){return new Promise(resolve=>{
+  stopRecognition();
+  if(!voiceOn||!('speechSynthesis' in window)){speaking=false;resolve();if(resume&&hands)setTimeout(()=>listen(true),300);return;}
+  try{speechSynthesis.cancel()}catch{}
+  const u=new SpeechSynthesisUtterance(String(text||''));u.lang='en-US';u.rate=.9;speaking=true;setState('AI กำลังพูด...','speak');
+  let finished=false;const done=()=>{if(finished)return;finished=true;clearTimeout(watch);speaking=false;resolve();if(resume&&hands)setTimeout(()=>listen(true),350);else if(!hands)setState('พร้อม')};
+  u.onend=done;u.onerror=done;const watch=setTimeout(()=>{try{speechSynthesis.cancel()}catch{}done()},Math.max(4500,Math.min(12000,String(text).length*80)));speechSynthesis.speak(u);
+})}
+async function send(text,resume){text=String(text||'').trim();if(!text||busy)return;busy=true;history.push({role:'user',text});$('#input').value='';$('#liveText').textContent='กำลังส่ง: '+text;setState('AI กำลังคิด...','wait');render();
+  try{
+    const r=await fetch(PROXY,{method:'POST',headers:{'content-type':'application/json','apikey':ANON,'authorization':'Bearer '+ANON},body:JSON.stringify({message:text,scenario,name:'Kung',history:history.slice(-12),mode:'friend'})});
+    const d=await r.json();if(!r.ok)throw new Error(d?.message||d?.error||'request failed');history.push({role:'ai',text:d.text||'Tell me more.',thai:d.thai||'',source:d.source||'unknown'});busy=false;$('#liveText').textContent='';render();await speak(d.text||'Tell me more.',resume&&hands);
+  }catch(e){busy=false;history.push({role:'ai',text:'I lost the connection for a moment. Can you say that again?',thai:'การเชื่อมต่อสะดุด ลองพูดอีกครั้งได้เลย',source:'network-fallback'});render();await speak(history.at(-1).text,resume&&hands)}
+}
+function listen(autoLoop){
+  if(!SR){alert('กรุณาใช้ Chrome หรือ Edge ที่รองรับ Speech Recognition');hands=false;render();return}
+  if(listening||busy||speaking)return;if(autoLoop&&!hands)return;
+  const myCycle=++cycle;const rec=new SR();recognition=rec;rec.lang='en-US';rec.interimResults=true;rec.continuous=false;rec.maxAlternatives=1;let heard='',sent=false,timer=null;
+  const scheduleSend=(delay)=>{clearTimeout(timer);timer=setTimeout(()=>finalize(),delay)};
+  const finalize=()=>{if(sent||myCycle!==cycle)return;const text=(heard||$('#input').value||'').trim();if(!text)return;sent=true;clearTimeout(timer);$('#liveText').textContent='กำลังส่ง: '+text;try{rec.abort()}catch{};listening=false;recognition=null;send(text,autoLoop)};
+  rec.onstart=()=>{if(myCycle!==cycle)return;listening=true;setState('กำลังฟังคุณ...','listen');$('#liveText').textContent='พูดได้เลย...'};
+  rec.onresult=e=>{if(myCycle!==cycle)return;let combined='',gotFinal=false;for(let i=0;i<e.results.length;i++){const t=e.results[i][0].transcript.trim();if(t)combined+=(combined?' ':'')+t;if(e.results[i].isFinal)gotFinal=true}if(combined)heard=combined;$('#input').value=heard;$('#liveText').textContent=heard?'ได้ยิน: '+heard:'กำลังฟัง...';if(heard)scheduleSend(gotFinal?250:1000)};
+  rec.onerror=e=>{if(myCycle!==cycle)return;if(e.error==='not-allowed'||e.error==='service-not-allowed'){hands=false;setState('ไมค์ไม่ได้รับอนุญาต');render()}else if(!['no-speech','aborted'].includes(e.error))setState('ไมค์: '+e.error)};
+  rec.onend=()=>{if(myCycle!==cycle)return;clearTimeout(timer);listening=false;recognition=null;if(sent)return;if(heard){finalize();return}if(autoLoop&&hands&&!busy&&!speaking)setTimeout(()=>listen(true),500);else if(!hands)setState('พร้อม')};
+  try{rec.start()}catch{listening=false;recognition=null;setState('เปิดไมค์ไม่ได้')}
+}
+$('#hands').onclick=()=>{if(hands){hands=false;cycle++;stopRecognition();try{speechSynthesis.cancel()}catch{}speaking=false;$('#liveText').textContent='';setState('หยุดแล้ว');render();return}hands=true;render();setState('กำลังเปิดไมค์...','wait');listen(true)};
+$('#mic').onclick=()=>{if(listening){cycle++;stopRecognition();setState('พร้อม');return}listen(false)};
+$('#mute').onclick=()=>{voiceOn=!voiceOn;if(!voiceOn)try{speechSynthesis.cancel()}catch{};render()};
+render();
+})();
+</script>
+</body>
+</html>

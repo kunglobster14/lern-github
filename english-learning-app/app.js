@@ -1,181 +1,27 @@
-const words = [
-  ['work','ทำงาน / งาน','เวิร์ก','I work every day.','ฉันทำงานทุกวัน'],
-  ['water','น้ำ','วอ-เทอร์','I want some water.','ฉันต้องการน้ำ'],
-  ['food','อาหาร','ฟูด','The food is good.','อาหารอร่อย'],
-  ['home','บ้าน','โฮม','I am at home.','ฉันอยู่บ้าน'],
-  ['go','ไป','โก','I go to work.','ฉันไปทำงาน'],
-  ['come','มา','คัม','Please come here.','กรุณามาที่นี่'],
-  ['want','ต้องการ','วอนท์','I want coffee.','ฉันต้องการกาแฟ'],
-  ['need','จำเป็น / ต้องการ','นีด','I need help.','ฉันต้องการความช่วยเหลือ'],
-  ['like','ชอบ','ไลก์','I like music.','ฉันชอบดนตรี'],
-  ['today','วันนี้','ทู-เดย์','I work today.','วันนี้ฉันทำงาน']
-];
-
-const quiz = [
-  { q:'work แปลว่าอะไร?', c:['ทำงาน / งาน','น้ำ','บ้าน'], a:0 },
-  { q:'I want water. หมายถึงอะไร?', c:['ฉันทำงานวันนี้','ฉันต้องการน้ำ','ฉันอยู่บ้าน'], a:1 },
-  { q:'คำว่า บ้าน คือคำใด?', c:['food','home','come'], a:1 },
-  { q:'I need help. หมายถึงอะไร?', c:['ฉันต้องการความช่วยเหลือ','ฉันชอบดนตรี','ฉันไปทำงาน'], a:0 },
-  { q:'today แปลว่าอะไร?', c:['เมื่อวาน','วันนี้','พรุ่งนี้'], a:1 }
-];
-
-const STORAGE_KEY = 'myEnglishV1';
-let state = loadState();
-let view = 'home';
-let wordIndex = 0;
-let quizIndex = 0;
-let quizScore = 0;
-
-function loadState(){
-  const fallback = { name:'ผู้เรียน', known:[], weak:[], xp:0, streak:1, quizBest:0 };
-  try {
-    return { ...fallback, ...JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') };
-  } catch {
-    return fallback;
-  }
-}
-
-function saveState(){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  document.querySelector('#profileName').textContent = state.name;
-}
-
-function go(nextView){
-  view = nextView;
-  document.querySelectorAll('.nav-btn').forEach((button) => {
-    button.classList.toggle('active', button.dataset.view === nextView);
-  });
-  render();
-}
-
-function homeView(){
-  const progress = Math.round((state.known.length / words.length) * 100);
-  return `
-    <section class="hero">
-      <div class="hero-row">
-        <div><h2>สวัสดี ${escapeHtml(state.name)} 👋</h2><p>วันนี้เรียนสั้น ๆ 10–15 นาทีก็พอ</p></div>
-        <div class="streak">🔥 ${state.streak} วัน</div>
-      </div>
-      <div class="progress-track"><div class="progress-fill" style="width:${progress}%"></div></div>
-    </section>
-    <div class="section-title"><h2>ฝึกวันนี้</h2><span class="muted">เป้าหมาย 10 นาที</span></div>
-    <section class="grid">
-      <article class="card"><div class="card-icon">📖</div><h3>คำศัพท์</h3><p>คำอ่านไทยและประโยคตัวอย่าง</p><button class="card-action" data-go="learn">เริ่มเรียน</button></article>
-      <article class="card"><div class="card-icon">🎯</div><h3>Quiz</h3><p>ทดสอบ 5 ข้อ</p><button class="card-action" id="quizStart">เริ่ม Quiz</button></article>
-      <article class="card"><div class="card-icon">🔄</div><h3>ทบทวน</h3><p>คำที่ยังจำไม่ได้</p><button class="card-action" data-go="review">ทบทวน ${state.weak.length} คำ</button></article>
-      <article class="card"><div class="card-icon">📊</div><h3>ความคืบหน้า</h3><p>${state.known.length} คำ • ${state.xp} XP</p><button class="card-action" data-go="progress">ดูสถิติ</button></article>
-    </section>`;
-}
-
-function learnView(){
-  const word = words[wordIndex];
-  return `
-    <div class="section-title"><h2>คำศัพท์พื้นฐาน</h2><span class="muted">${wordIndex + 1}/${words.length}</span></div>
-    <section class="learning-card">
-      <div class="word">${word[0]}</div>
-      <div class="pronunciation">${word[2]}</div>
-      <div class="meaning">${word[1]}</div>
-      <button class="secondary-btn" id="speak" type="button">🔊 ฟังเสียง</button>
-      <div class="example"><strong>${word[3]}</strong><br><span class="muted">${word[4]}</span></div>
-      <div class="row"><button class="danger-btn" id="weak" type="button">ยังจำไม่ได้</button><button class="primary-btn" id="known" type="button">จำได้แล้ว</button></div>
-    </section>`;
-}
-
-function reviewView(){
-  if (!state.weak.length) {
-    return `<div class="empty"><h2>🎉 ไม่มีคำที่ต้องทบทวน</h2><button class="primary-btn" data-go="learn">ไปเรียน</button></div>`;
-  }
-  return `<div class="section-title"><h2>คำที่ต้องทบทวน</h2></div><div class="list">${state.weak.map((key) => {
-    const word = words.find((item) => item[0] === key);
-    if (!word) return '';
-    return `<div class="list-item"><div><strong>${word[0]} — ${word[1]}</strong><br><span class="muted">${word[3]}</span></div><button class="secondary-btn speak-review" data-word="${word[0]}" type="button">🔊</button></div>`;
-  }).join('')}</div>`;
-}
-
-function progressView(){
-  return `<div class="section-title"><h2>ความคืบหน้า</h2><span class="status-pill">Demo Mode</span></div><section class="stats"><div class="stat"><strong>${state.known.length}</strong><span>คำที่จำได้</span></div><div class="stat"><strong>${state.quizBest}%</strong><span>Quiz สูงสุด</span></div><div class="stat"><strong>${state.xp}</strong><span>XP</span></div></section>`;
-}
-
-function quizView(){
-  if (quizIndex >= quiz.length) {
-    const scorePercent = Math.round((quizScore / quiz.length) * 100);
-    state.quizBest = Math.max(state.quizBest, scorePercent);
-    state.xp += quizScore * 5;
-    saveState();
-    return `<div class="empty"><h2>🏆 Quiz เสร็จแล้ว</h2><h1>${scorePercent}%</h1><button class="primary-btn" data-go="home">กลับหน้าแรก</button></div>`;
-  }
-  const question = quiz[quizIndex];
-  return `<div class="section-title"><h2>Quiz</h2><span>${quizIndex + 1}/${quiz.length}</span></div><section class="card"><h2>${question.q}</h2><div class="choices">${question.c.map((choice,index) => `<button class="choice-btn" data-choice="${index}" type="button">${choice}</button>`).join('')}</div></section>`;
-}
-
-function render(){
-  const app = document.querySelector('#app');
-  app.innerHTML = view === 'home' ? homeView() : view === 'learn' ? learnView() : view === 'review' ? reviewView() : view === 'progress' ? progressView() : quizView();
-
-  app.querySelectorAll('[data-go]').forEach((button) => button.addEventListener('click', () => go(button.dataset.go)));
-  app.querySelector('#quizStart')?.addEventListener('click', () => { quizIndex = 0; quizScore = 0; go('quiz'); });
-  app.querySelector('#speak')?.addEventListener('click', () => speak(words[wordIndex][0]));
-  app.querySelectorAll('.speak-review').forEach((button) => button.addEventListener('click', () => speak(button.dataset.word)));
-  app.querySelector('#known')?.addEventListener('click', () => markWord(true));
-  app.querySelector('#weak')?.addEventListener('click', () => markWord(false));
-  app.querySelectorAll('[data-choice]').forEach((button) => button.addEventListener('click', () => answerQuestion(button)));
-  saveState();
-}
-
-function markWord(isKnown){
-  const key = words[wordIndex][0];
-  if (isKnown) {
-    if (!state.known.includes(key)) {
-      state.known.push(key);
-      state.xp += 10;
-    }
-    state.weak = state.weak.filter((item) => item !== key);
-  } else if (!state.weak.includes(key)) {
-    state.weak.push(key);
-  }
-  wordIndex = (wordIndex + 1) % words.length;
-  saveState();
-  render();
-}
-
-function answerQuestion(button){
-  const question = quiz[quizIndex];
-  const selected = Number(button.dataset.choice);
-  document.querySelectorAll('[data-choice]').forEach((item) => { item.disabled = true; });
-  if (selected === question.a) {
-    button.classList.add('correct');
-    quizScore += 1;
-  } else {
-    button.classList.add('wrong');
-    document.querySelectorAll('[data-choice]')[question.a].classList.add('correct');
-  }
-  setTimeout(() => { quizIndex += 1; render(); }, 650);
-}
-
-function speak(text){
-  if (!('speechSynthesis' in window)) return;
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'en-US';
-  utterance.rate = 0.85;
-  window.speechSynthesis.speak(utterance);
-}
-
-function escapeHtml(value){
-  return String(value).replace(/[&<>'"]/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
-}
-
-document.querySelectorAll('.nav-btn').forEach((button) => button.addEventListener('click', () => go(button.dataset.view)));
-const profileDialog = document.querySelector('#profileDialog');
-document.querySelector('#profileBtn').addEventListener('click', () => {
-  document.querySelector('#nameInput').value = state.name === 'ผู้เรียน' ? '' : state.name;
-  profileDialog.showModal();
-});
-document.querySelector('#profileForm').addEventListener('submit', () => {
-  const name = document.querySelector('#nameInput').value.trim();
-  if (name) state.name = name;
-  saveState();
-  render();
-});
-
-render();
+const words=[['work','ทำงาน / งาน','เวิร์ก','I work every day.','ฉันทำงานทุกวัน'],['water','น้ำ','วอ-เทอร์','I want some water.','ฉันต้องการน้ำ'],['food','อาหาร','ฟูด','The food is good.','อาหารอร่อย'],['home','บ้าน','โฮม','I am at home.','ฉันอยู่บ้าน'],['go','ไป','โก','I go to work.','ฉันไปทำงาน'],['come','มา','คัม','Please come here.','กรุณามาที่นี่'],['want','ต้องการ','วอนท์','I want coffee.','ฉันต้องการกาแฟ'],['need','จำเป็น / ต้องการ','นีด','I need help.','ฉันต้องการความช่วยเหลือ'],['like','ชอบ','ไลก์','I like music.','ฉันชอบดนตรี'],['today','วันนี้','ทู-เดย์','I work today.','วันนี้ฉันทำงาน'],['hello','สวัสดี','เฮล-โล','Hello, how are you?','สวัสดี คุณเป็นอย่างไรบ้าง'],['please','กรุณา','พลีซ','Water, please.','ขอน้ำครับ/ค่ะ'],['thanks','ขอบคุณ','แธงก์ส','Thanks for your help.','ขอบคุณสำหรับความช่วยเหลือ'],['where','ที่ไหน','แวร์','Where is the station?','สถานีอยู่ที่ไหน'],['how much','ราคาเท่าไร','ฮาว มัช','How much is this?','อันนี้ราคาเท่าไร']];
+const quiz=[{q:'work แปลว่าอะไร?',c:['ทำงาน / งาน','น้ำ','บ้าน'],a:0},{q:'I want water. หมายถึงอะไร?',c:['ฉันทำงานวันนี้','ฉันต้องการน้ำ','ฉันอยู่บ้าน'],a:1},{q:'คำว่า บ้าน คือคำใด?',c:['food','home','come'],a:1},{q:'I need help. หมายถึงอะไร?',c:['ฉันต้องการความช่วยเหลือ','ฉันชอบดนตรี','ฉันไปทำงาน'],a:0},{q:'How much is this? ใช้ถามอะไร?',c:['ชื่ออะไร','ราคาเท่าไร','ไปที่ไหน'],a:1}];
+const scenarios={coffee:{label:'☕ ร้านกาแฟ',opening:'Hi! Welcome to the café. What would you like to drink?',hint:'ลองตอบ: I would like a coffee, please.'},travel:{label:'✈️ เดินทาง',opening:'Hello! Where would you like to go today?',hint:'ลองตอบ: I want to go to Bangkok.'},work:{label:'💼 ที่ทำงาน',opening:'Good morning! What are you working on today?',hint:'ลองตอบ: I am working on a new project.'},daily:{label:'🌤️ ชีวิตประจำวัน',opening:'Hi! How are you today?',hint:'ลองตอบ: I am good, thank you.'}};
+const KEY='myEnglishV2';
+const fallback={name:'ผู้เรียน',known:[],weak:[],xp:0,streak:1,quizBest:0,scenario:'daily',chat:[]};
+let state=loadState(),view='home',wordIndex=0,quizIndex=0,quizScore=0,aiBusy=false;
+function loadState(){try{return{...fallback,...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch{return{...fallback}}}
+function saveState(){localStorage.setItem(KEY,JSON.stringify(state));const n=document.querySelector('#profileName');if(n)n.textContent=state.name}
+function escapeHtml(v){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function go(next){view=next;document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===next));render()}
+function level(){return Math.max(1,Math.floor(state.xp/100)+1)}
+function homeView(){const p=Math.round(state.known.length/words.length*100);return `<section class="hero"><div class="hero-kicker">TODAY'S JOURNEY</div><h1>พร้อมเก่งขึ้นอีกนิดไหม ${escapeHtml(state.name)}?</h1><p>เรียนสั้น ๆ แต่ต่อเนื่องทุกวัน</p><div class="hero-meta"><div class="hero-stat"><b>🔥 ${state.streak}</b><span>วันต่อเนื่อง</span></div><div class="hero-stat"><b>${state.xp}</b><span>XP</span></div><div class="hero-stat"><b>Lv.${level()}</b><span>ระดับ</span></div></div><div class="progress-track"><div class="progress-fill" style="width:${p}%"></div></div></section><div class="section-title"><h2>เลือกฝึกวันนี้</h2><span>${state.known.length}/${words.length} คำ</span></div><section class="grid"><article class="action-card big"><div class="card-orb">✦</div><h3>AI Conversation Coach</h3><p>คุยภาษาอังกฤษ ฝึกตอบโต้ และให้ AI ช่วยแก้ประโยคเป็นภาษาไทย</p><button class="card-action" data-go="ai">เริ่มคุย</button></article><article class="action-card"><div class="card-orb">Aa</div><h3>คำศัพท์</h3><p>คำอ่านไทย + ตัวอย่างจริง</p><button class="card-action" data-go="learn">เรียน</button></article><article class="action-card"><div class="card-orb">✓</div><h3>Quiz</h3><p>ทดสอบ 5 ข้อแบบเร็ว</p><button class="card-action" id="quizStart">เริ่ม</button></article><article class="action-card"><div class="card-orb">↻</div><h3>ทบทวน</h3><p>${state.weak.length} คำที่ต้องจำเพิ่ม</p><button class="card-action" data-go="review">เปิด</button></article></section>`}
+function learnView(){const w=words[wordIndex];return `<div class="section-title"><h2>Vocabulary Flow</h2><span>${wordIndex+1}/${words.length}</span></div><section class="learning-card"><span class="word-chip">BEGINNER • DAILY WORD</span><div class="word">${w[0]}</div><div class="pronunciation">/${w[2]}/</div><div class="meaning">${w[1]}</div><button class="secondary-btn" id="speak" type="button">🔊 ฟังเสียง</button><div class="example"><b>${w[3]}</b><small>${w[4]}</small></div><div class="row"><button class="danger-btn" id="weak" type="button">ยังไม่จำ</button><button class="primary-btn" id="known" type="button">จำได้แล้ว +10 XP</button></div></section>`}
+function aiView(){const sc=scenarios[state.scenario];const messages=state.chat.length?state.chat:[{role:'ai',text:sc.opening,thai:'เริ่มจากประโยคสั้น ๆ ได้เลย ไม่ต้องกลัวผิด'}];return `<section class="glass-card chat-shell"><div class="ai-head"><div class="ai-avatar">✦</div><div><h2>AI Coach</h2><p><span class="status-dot"></span>English partner • พูดช้าและช่วยแก้ให้</p></div></div><div class="scenario-row">${Object.entries(scenarios).map(([k,v])=>`<button class="scenario ${k===state.scenario?'active':''}" data-scenario="${k}" type="button">${v.label}</button>`).join('')}</div><div class="messages" id="messages">${messages.map(m=>`<div class="bubble ${m.role==='user'?'user':'ai'}">${escapeHtml(m.text)}${m.thai?`<span class="thai">${escapeHtml(m.thai)}</span>`:''}</div>`).join('')}</div><div class="example"><b>💡 ตัวช่วย</b><small>${escapeHtml(sc.hint)}</small></div><form class="chat-form" id="chatForm"><button class="mic-btn" id="micBtn" type="button" aria-label="พูด">🎙️</button><input class="chat-input" id="chatInput" autocomplete="off" placeholder="พิมพ์อังกฤษหรือไทยก็ได้..." ${aiBusy?'disabled':''}><button class="send-btn" type="submit" ${aiBusy?'disabled':''}>➤</button></form></section>`}
+function reviewView(){if(!state.weak.length)return `<div class="empty"><h2>🎉 วันนี้ไม่มีคำค้าง</h2><p>คุณทบทวนครบแล้ว ลองเรียนคำใหม่ต่อได้เลย</p><button class="primary-btn" data-go="learn">เรียนต่อ</button></div>`;return `<div class="section-title"><h2>Weak Words</h2><span>${state.weak.length} คำ</span></div><div class="review-list">${state.weak.map(k=>{const w=words.find(x=>x[0]===k);return w?`<div class="review-item"><div><b>${w[0]} — ${w[1]}</b><small>${w[3]}</small></div><button class="secondary-btn speak-review" data-word="${w[0]}" type="button">🔊</button></div>`:''}).join('')}</div>`}
+function progressView(){const pct=Math.round(state.known.length/words.length*100);return `<div class="section-title"><h2>Your Progress</h2><span>Level ${level()}</span></div><section class="stats-grid"><div class="stat-card"><b>${state.xp}</b><span>XP ทั้งหมด</span></div><div class="stat-card"><b>${state.quizBest}%</b><span>Quiz สูงสุด</span></div><div class="stat-card"><b>${state.known.length}</b><span>คำที่จำได้</span></div><div class="stat-card"><b>${state.weak.length}</b><span>คำต้องทบทวน</span></div></section><section class="level-card"><b>Level ${level()} • ${pct}% Vocabulary</b><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div><p style="color:#94a3b8;font-size:12px;margin-bottom:0">เป้าหมายแรก: ใช้ประโยคพื้นฐานในชีวิตประจำวันได้อย่างมั่นใจ</p></section>`}
+function quizView(){if(quizIndex>=quiz.length){const score=Math.round(quizScore/quiz.length*100);state.quizBest=Math.max(state.quizBest,score);state.xp+=quizScore*5;saveState();return `<div class="empty"><h2>🏆 Quiz Complete</h2><div style="font-size:48px;font-weight:900;color:white">${score}%</div><p>ได้เพิ่ม ${quizScore*5} XP</p><button class="primary-btn" data-go="home">กลับหน้าแรก</button></div>`}const q=quiz[quizIndex];return `<div class="section-title"><h2>Quick Quiz</h2><span>${quizIndex+1}/${quiz.length}</span></div><section class="glass-card"><h2>${q.q}</h2><div class="choice-list">${q.c.map((c,i)=>`<button class="choice-btn" data-choice="${i}" type="button">${c}</button>`).join('')}</div></section>`}
+function render(){const app=document.querySelector('#app');app.innerHTML=view==='home'?homeView():view==='learn'?learnView():view==='ai'?aiView():view==='review'?reviewView():view==='progress'?progressView():quizView();app.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));app.querySelector('#quizStart')?.addEventListener('click',()=>{quizIndex=0;quizScore=0;go('quiz')});app.querySelector('#speak')?.addEventListener('click',()=>speak(words[wordIndex][0]));app.querySelectorAll('.speak-review').forEach(b=>b.onclick=()=>speak(b.dataset.word));app.querySelector('#known')?.addEventListener('click',()=>markWord(true));app.querySelector('#weak')?.addEventListener('click',()=>markWord(false));app.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>answerQuestion(b));app.querySelectorAll('[data-scenario]').forEach(b=>b.onclick=()=>changeScenario(b.dataset.scenario));app.querySelector('#chatForm')?.addEventListener('submit',sendChat);app.querySelector('#micBtn')?.addEventListener('click',startListening);saveState();requestAnimationFrame(()=>{const m=document.querySelector('#messages');if(m)m.scrollTop=m.scrollHeight})}
+function markWord(ok){const key=words[wordIndex][0];if(ok){if(!state.known.includes(key)){state.known.push(key);state.xp+=10}state.weak=state.weak.filter(x=>x!==key)}else if(!state.weak.includes(key))state.weak.push(key);wordIndex=(wordIndex+1)%words.length;saveState();render()}
+function answerQuestion(btn){const q=quiz[quizIndex],selected=Number(btn.dataset.choice);document.querySelectorAll('[data-choice]').forEach(x=>x.disabled=true);if(selected===q.a){btn.classList.add('correct');quizScore++}else{btn.classList.add('wrong');document.querySelectorAll('[data-choice]')[q.a].classList.add('correct')}setTimeout(()=>{quizIndex++;render()},650)}
+function changeScenario(key){state.scenario=key;state.chat=[{role:'ai',text:scenarios[key].opening,thai:'เลือกสถานการณ์ใหม่แล้ว ลองตอบเป็นอังกฤษดูครับ'}];saveState();render()}
+async function sendChat(e){e.preventDefault();if(aiBusy)return;const input=document.querySelector('#chatInput');const text=input.value.trim();if(!text)return;state.chat.push({role:'user',text});state.chat=state.chat.slice(-16);input.value='';aiBusy=true;saveState();render();try{const reply=await requestAI(text);state.chat.push({role:'ai',text:reply.text,thai:reply.thai});state.xp+=2;speak(reply.text)}catch{const reply=localCoach(text);state.chat.push({role:'ai',text:reply.text,thai:reply.thai});speak(reply.text)}finally{state.chat=state.chat.slice(-16);aiBusy=false;saveState();render()}}
+async function requestAI(message){const response=await fetch('./api/ai',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({message,scenario:state.scenario,name:state.name,history:state.chat.slice(-10)})});if(!response.ok)throw new Error('AI unavailable');const data=await response.json();if(!data?.text)throw new Error('Invalid AI response');return data}
+function localCoach(text){const t=text.toLowerCase().trim();if(/[ก-๙]/.test(text))return{text:'Try saying it in simple English. You can start with “I want…”, “I need…”, or “I am…”.',thai:'ตอนนี้เป็นโหมดสำรองออฟไลน์: ลองเปลี่ยนเป็นอังกฤษสั้น ๆ เช่น I want..., I need..., I am...'};if(t.includes('coffee'))return{text:'Great! A natural sentence is: “I would like a coffee, please.” What size would you like?',thai:'ดีมาก ประโยคธรรมชาติคือ “ฉันขอกาแฟหนึ่งแก้วครับ/ค่ะ” แล้วลองตอบขนาดต่อ'};if(t.includes('how are you'))return{text:'I am great, thank you! How about you?',thai:'ตอบต่อได้ว่า I am good. หรือ I am tired today.'};if(t.startsWith('i want'))return{text:`Good sentence! “${text}” is understandable. Add “please” when you are ordering something.`,thai:'ประโยคเข้าใจได้ดี ถ้าสั่งของให้เติม please เพื่อสุภาพขึ้น'};if(t.startsWith('i am'))return{text:'Nice! Now add one more detail. For example: “I am tired because I worked today.”',thai:'ดีมาก ลองต่อรายละเอียดอีกหนึ่งส่วน เช่น เพราะอะไร หรือวันนี้ทำอะไร'};return{text:'Good try! Keep it short and clear. Can you tell me one more thing about that?',thai:'ทำได้ดีครับ ไม่ต้องใช้ประโยคยาว ลองเพิ่มรายละเอียดอีก 1 อย่าง'} }
+function speak(text){if(!('speechSynthesis'in window))return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=.82;speechSynthesis.speak(u)}
+function startListening(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert('เบราว์เซอร์นี้ยังไม่รองรับการพูดเป็นข้อความ ลองใช้ Chrome บน Android หรือพิมพ์แทนได้ครับ');return}const r=new SR();r.lang='en-US';r.interimResults=false;r.maxAlternatives=1;r.onresult=e=>{const input=document.querySelector('#chatInput');if(input)input.value=e.results[0][0].transcript};r.start()}
+document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>go(b.dataset.view));const dialog=document.querySelector('#profileDialog');document.querySelector('#profileBtn').onclick=()=>{document.querySelector('#nameInput').value=state.name==='ผู้เรียน'?'':state.name;dialog.showModal()};document.querySelector('#profileForm').onsubmit=()=>{const n=document.querySelector('#nameInput').value.trim();if(n)state.name=n;saveState();render()};if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));render();

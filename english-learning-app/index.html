@@ -6,10 +6,11 @@
   <meta name="theme-color" content="#07111f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="description" content="My English Coach - ฝึกภาษาอังกฤษบนมือถือพร้อม AI Coach">
+  <meta name="description" content="My English Coach - ฝึกภาษาอังกฤษบนมือถือพร้อม AI Coach แบบ $0-first">
   <link rel="manifest" href="manifest.webmanifest">
   <title>My English Coach</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="enhancements.css">
 </head>
 <body>
   <div class="ambient ambient-a"></div>
@@ -20,7 +21,10 @@
         <div class="brand-mark">M</div>
         <div><div class="eyebrow">MY ENGLISH</div><div class="brand-title">English Coach</div></div>
       </div>
-      <button id="profileBtn" class="icon-btn profile-btn" type="button" aria-label="โปรไฟล์"><span>👤</span><b id="profileName">ผู้เรียน</b></button>
+      <div class="top-actions">
+        <span id="freeModeBadge" class="free-badge" data-mode="local">FREE · Local Ready</span>
+        <button id="profileBtn" class="icon-btn profile-btn" type="button" aria-label="โปรไฟล์"><span>👤</span><b id="profileName">ผู้เรียน</b></button>
+      </div>
     </header>
 
     <main id="app" aria-live="polite"></main>
@@ -38,14 +42,33 @@
     <form method="dialog" id="profileForm" class="dialog-card">
       <div class="dialog-handle"></div>
       <div class="mini-orb">👋</div>
-      <h2>ตั้งชื่อผู้เรียน</h2>
-      <p>ชื่อจะใช้เรียกคุณในหน้าเรียนและ AI Coach</p>
-      <label for="nameInput">ชื่อเล่น</label>
+      <h2>ผู้เรียนและข้อมูลของฉัน</h2>
+      <p>ข้อมูลหลักเก็บอยู่ในอุปกรณ์นี้ก่อน จึงใช้งานได้โดยไม่เสียค่าฐานข้อมูล</p>
+
+      <div class="local-tools">
+        <span class="tool-label">โปรไฟล์บนอุปกรณ์นี้</span>
+        <div class="profile-switch">
+          <select id="profileSelect" aria-label="เลือกโปรไฟล์ผู้เรียน"></select>
+          <button id="addProfileBtn" class="mini-btn" type="button">+ เพิ่ม</button>
+        </div>
+      </div>
+
+      <label for="nameInput">ชื่อเล่นของโปรไฟล์นี้</label>
       <input id="nameInput" maxlength="30" autocomplete="nickname" placeholder="เช่น กุ้ง">
-      <div class="dialog-actions"><button value="cancel" class="secondary-btn">ยกเลิก</button><button value="default" class="primary-btn">บันทึก</button></div>
+
+      <div class="utility-grid">
+        <button id="exportBackupBtn" class="utility-btn" type="button">⬇ สำรองข้อมูล</button>
+        <button id="importBackupBtn" class="utility-btn" type="button">⬆ นำเข้าข้อมูล</button>
+        <button id="installAppBtn" class="utility-btn" type="button">📱 ติดตั้งแอป</button>
+      </div>
+      <input id="backupFileInput" type="file" accept="application/json,.json" hidden>
+      <p class="zero-cost-note">$0 MODE: AI ออนไลน์ใช้เฉพาะโมเดลที่ราคา $0 หากใช้ไม่ได้จะเปลี่ยนเป็น Local Coach อัตโนมัติ ไม่มี fallback ไปบริการเสียเงิน</p>
+
+      <div class="dialog-actions"><button value="cancel" class="secondary-btn">ปิด</button><button value="default" class="primary-btn">บันทึกชื่อ</button></div>
     </form>
   </dialog>
 
+  <script src="enhancements.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

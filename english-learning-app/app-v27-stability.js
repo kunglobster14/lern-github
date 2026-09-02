@@ -27,14 +27,10 @@
     const app=document.querySelector('#app');
     if(!app)return false;
     app.querySelectorAll('[data-scenario]').forEach(btn=>{
-      btn.onclick=()=>{
-        const key=btn.dataset.scenario;
-        normalizeScenario();
-        try{if(typeof changeScenario==='function')changeScenario(scenarios[key]?key:'daily')}catch{}
-      };
+      btn.onclick=()=>stableChangeScenario(btn.dataset.scenario);
     });
     const form=app.querySelector('#chatForm');
-    if(form)form.onsubmit=e=>{try{return sendChat(e)}catch(err){e.preventDefault();console.error(err)}};
+    if(form)form.onsubmit=stableSendChat;
     const mic=app.querySelector('#micBtn');
     if(mic)mic.onclick=()=>{try{startListening()}catch{}};
     requestAnimationFrame(()=>{
@@ -63,6 +59,45 @@
     }
   }
 
+  function stableChangeScenario(key){
+    normalizeScenario();
+    try{
+      const safe=scenarios&&scenarios[key]?key:'daily';
+      state.scenario=safe;
+      state.chat=[{role:'ai',text:scenarios[safe].opening,thai:'เลือกสถานการณ์ใหม่แล้ว ลองตอบเป็นอังกฤษดูครับ'}];
+      if(typeof saveState==='function')saveState();
+      enterAI();
+    }catch(err){console.error('Scenario change failed',err)}
+  }
+
+  async function stableSendChat(event){
+    event?.preventDefault?.();
+    if(typeof aiBusy!=='undefined'&&aiBusy)return;
+    const input=document.querySelector('#chatInput');
+    const text=String(input?.value||'').trim();
+    if(!text)return;
+    try{
+      state.chat=Array.isArray(state.chat)?state.chat:[];
+      state.chat.push({role:'user',text});
+      state.chat=state.chat.slice(-16);
+      if(input)input.value='';
+      aiBusy=true;
+      if(typeof saveState==='function')saveState();
+      enterAI();
+      let reply;
+      try{reply=await requestAI(text)}catch{reply=typeof localCoach==='function'?localCoach(text):{text:'Good try! Please try one more short sentence.',thai:'ลองอีกครั้งด้วยประโยคสั้น ๆ ได้เลย'}}
+      state.chat.push({role:'ai',text:String(reply?.text||''),thai:String(reply?.thai||'')});
+      state.chat=state.chat.slice(-16);
+      state.xp=(Number(state.xp)||0)+2;
+      try{if(reply?.text&&typeof speak==='function')speak(reply.text)}catch{}
+    }catch(err){console.error('AI send failed',err)}
+    finally{
+      aiBusy=false;
+      try{if(typeof saveState==='function')saveState()}catch{}
+      enterAI();
+    }
+  }
+
   function acceptMission(){
     try{
       const mission=state?.gameLab?.aiMission;
@@ -81,7 +116,7 @@
     const target=event.target;
     if(!(target instanceof Element))return;
 
-    const close=target.closest('.game-close,#missionClose,[data-plus-close]');
+    const close=target.closest('.game-close,#missionClose,[data-plus-close],#labDone');
     if(close&&close.closest('#gameLabModal')){
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -122,17 +157,20 @@
   normalizeScenario();
 
   try{
-    if(typeof requestAI==='function'&&!requestAI.__v28Wrapped){
+    if(typeof requestAI==='function'&&!requestAI.__v29Wrapped){
       const original=requestAI;
       const wrapped=async function(...args){
         let timer;
         const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('ai_timeout')),12000)});
         try{return await Promise.race([original.apply(this,args),timeout])}finally{clearTimeout(timer)}
       };
-      wrapped.__v28Wrapped=true;
+      wrapped.__v29Wrapped=true;
       requestAI=wrapped;
     }
   }catch{}
+
+  try{sendChat=stableSendChat}catch{}
+  try{changeScenario=stableChangeScenario}catch{}
 
   const boot=()=>{
     normalizeScenario();
@@ -140,5 +178,5 @@
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 
-  window.__appStability={enterAI,closeGame,version:'28'};
+  window.__appStability={enterAI,closeGame,version:'29'};
 })();

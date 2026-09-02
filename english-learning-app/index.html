@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f172a">
+  <title>My English</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">MY ENGLISH</div>
+        <h1>ฝึกอังกฤษวันละนิด</h1>
+      </div>
+      <button id="profileBtn" class="ghost-btn" type="button">👤 <span id="profileName">ผู้เรียน</span></button>
+    </header>
+
+    <main id="app" aria-live="polite"></main>
+
+    <nav class="bottom-nav" aria-label="เมนูหลัก">
+      <button class="nav-btn active" data-view="home" type="button">🏠<span>หน้าแรก</span></button>
+      <button class="nav-btn" data-view="learn" type="button">📚<span>เรียน</span></button>
+      <button class="nav-btn" data-view="review" type="button">🔄<span>ทบทวน</span></button>
+      <button class="nav-btn" data-view="progress" type="button">📊<span>สถิติ</span></button>
+    </nav>
+  </div>
+
+  <dialog id="profileDialog">
+    <form method="dialog" id="profileForm" class="dialog-card">
+      <h2>ชื่อผู้เรียน</h2>
+      <p class="muted">เวอร์ชันทดลองจะเก็บความคืบหน้าไว้ในอุปกรณ์นี้ก่อน</p>
+      <label for="nameInput">ชื่อเล่น</label>
+      <input id="nameInput" maxlength="30" placeholder="เช่น กุ้ง">
+      <div class="dialog-actions">
+        <button value="cancel" class="secondary-btn">ยกเลิก</button>
+        <button value="default" class="primary-btn">บันทึก</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>

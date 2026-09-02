@@ -41,11 +41,7 @@ function parseCoachReply(raw) {
 
 function safeFailure(model, status, payload) {
   const apiCode = payload?.error?.code || payload?.error?.type || payload?.error?.message || `HTTP_${status || 0}`;
-  return {
-    model,
-    status: Number(status) || null,
-    code: String(apiCode || 'unknown_error').slice(0, 100)
-  };
+  return { model, status: Number(status) || null, code: String(apiCode || 'unknown_error').slice(0, 100) };
 }
 
 async function callGroq(model, messages, system, maxTokens = 220) {
@@ -58,17 +54,11 @@ async function callGroq(model, messages, system, maxTokens = 220) {
 
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: model.id,
-      messages: [
-        { role: 'system', content: system },
-        ...messages
-      ],
-      temperature: 0.35,
+      messages: [{ role: 'system', content: system }, ...messages],
+      temperature: 0.55,
       max_completion_tokens: maxTokens,
       stream: false
     })
@@ -82,23 +72,14 @@ async function callGroq(model, messages, system, maxTokens = 220) {
   }
 
   const raw = payload?.choices?.[0]?.message?.content || '';
-  return {
-    ...parseCoachReply(raw),
-    model: model.id,
-    modelLabel: model.label,
-    source: 'groq-free-plan',
-    freeOnly: true
-  };
+  return { ...parseCoachReply(raw), model: model.id, modelLabel: model.label, source: 'groq-free-plan', freeOnly: true };
 }
 
 async function askFreeModels(messages, system, maxTokens = 220) {
   const failures = [];
   for (const model of FREE_MODELS) {
-    try {
-      return await callGroq(model, messages, system, maxTokens);
-    } catch (error) {
-      failures.push(error?.failure || { model: model.id, status: null, code: 'unknown_error' });
-    }
+    try { return await callGroq(model, messages, system, maxTokens); }
+    catch (error) { failures.push(error?.failure || { model: model.id, status: null, code: 'unknown_error' }); }
   }
   const error = new Error('All Groq Free Plan models are unavailable.');
   error.failures = failures;
@@ -112,61 +93,58 @@ async function runProbe() {
       'You are a connectivity probe. Reply with exactly OK and nothing else.',
       8
     );
-    return {
-      ok: true,
-      online: true,
-      provider: 'groq-free-plan',
-      mode: 'zero-cost-only',
-      model: reply.model,
-      modelLabel: reply.modelLabel
-    };
+    return { ok: true, online: true, provider: 'groq-free-plan', mode: 'zero-cost-only', model: reply.model, modelLabel: reply.modelLabel };
   } catch (error) {
-    return {
-      ok: true,
-      online: false,
-      provider: 'groq-free-plan',
-      mode: 'zero-cost-only',
-      failures: Array.isArray(error?.failures) ? error.failures : []
-    };
+    return { ok: true, online: false, provider: 'groq-free-plan', mode: 'zero-cost-only', failures: Array.isArray(error?.failures) ? error.failures : [] };
   }
+}
+
+async function makeMission(body) {
+  const level = Math.max(1, Math.min(20, Number(body.level) || 1));
+  const learner = String(body.name || 'ผู้เรียน').trim().slice(0, 30);
+  const scenario = SCENARIOS[body.scenario] || SCENARIOS.daily;
+  const system = `You design playful 2-minute English micro-missions for a Thai beginner named ${learner}, level ${level}.
+The current theme is ${scenario}.
+Make ONE surprising but practical challenge that can be completed by speaking or typing 1-3 short English sentences.
+Vary the mechanic: sometimes forbid one common word, sometimes require two useful phrases, sometimes role-play a tiny problem, sometimes ask the learner to transform a Thai idea into English.
+Keep it friendly, achievable, and different from a normal multiple-choice quiz.
+The English text must be the short mission title/challenge. The Thai field must explain exactly what to do, with one tiny example if helpful.
+Return ONLY valid JSON in this exact shape: {"text":"short English mission","thai":"clear Thai mission instructions"}.`;
+  return askFreeModels([{ role: 'user', content: 'Create today’s surprise mission.' }], system, 160);
 }
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
-  if (req.method === 'OPTIONS') {
-    res.status(204).end();
-    return;
-  }
+  if (req.method === 'OPTIONS') { res.status(204).end(); return; }
 
   if (req.method === 'GET') {
-    if (String(req.query?.probe || '') === '1') {
-      res.status(200).json(await runProbe());
-      return;
-    }
+    if (String(req.query?.probe || '') === '1') { res.status(200).json(await runProbe()); return; }
     res.status(200).json({
       ok: true,
       provider: 'groq-free-plan',
       mode: 'zero-cost-only',
       keyConfigured: Boolean(process.env.GROQ_API_KEY),
-      models: FREE_MODELS.map((model) => model.id)
+      models: FREE_MODELS.map((model) => model.id),
+      features: ['coach', 'surprise-mission']
     });
     return;
   }
 
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'method_not_allowed' });
-    return;
-  }
+  if (req.method !== 'POST') { res.status(405).json({ error: 'method_not_allowed' }); return; }
 
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-    const message = String(body.message || '').trim().slice(0, 800);
-    if (!message) {
-      res.status(400).json({ error: 'message_required' });
+
+    if (body.mode === 'mission') {
+      const reply = await makeMission(body);
+      res.status(200).json({ ...reply, kind: 'surprise-mission' });
       return;
     }
+
+    const message = String(body.message || '').trim().slice(0, 800);
+    if (!message) { res.status(400).json({ error: 'message_required' }); return; }
 
     const scenario = SCENARIOS[body.scenario] || SCENARIOS.daily;
     const learner = String(body.name || 'ผู้เรียน').trim().slice(0, 30);
@@ -185,10 +163,7 @@ Return ONLY valid JSON in this exact shape: {"text":"English coach reply","thai"
     res.status(200).json(reply);
   } catch (error) {
     res.status(503).json({
-      error: 'free_ai_unavailable',
-      fallback: 'local_coach',
-      provider: 'groq-free-plan',
-      freeOnly: true,
+      error: 'free_ai_unavailable', fallback: 'local_coach', provider: 'groq-free-plan', freeOnly: true,
       failures: Array.isArray(error?.failures) ? error.failures : []
     });
   }

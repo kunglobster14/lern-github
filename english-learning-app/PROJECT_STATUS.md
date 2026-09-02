@@ -18,6 +18,8 @@
 - Vercel AI SDK dependency configured
 - Neon V2 schema prepared for 5–10 learners
 - User accounts, sessions, progress, spaced review, quiz history, study sessions, and AI conversation tables are defined
+- Vercel Hobby project `my-english-coach-free` created through the web UI
+- GitHub → Vercel deployment status confirmed successful
 
 ## Current zero-cost behavior
 Learner progress is stored locally in the browser/device. Each device can hold multiple learner profiles and export a backup file. This keeps the app usable at $0 even before the shared database is connected.
@@ -32,14 +34,13 @@ Learner progress is stored locally in the browser/device. Each device can hold m
 
 ## External connector blockers
 - Neon connector exposes camelCase parameters to ChatGPT while its backend currently expects snake_case, so even read/write database calls are rejected before SQL reaches PostgreSQL.
-- Vercel deploy connector can return a deployment ID, but a newly created project is not consistently visible to the read API afterward. A one-time Vercel web import may still be required to establish the project.
+- Vercel project exists and deployment succeeds, but the Vercel read connector still does not list the new project immediately. GitHub deployment status is currently the reliable verification path.
 - GitHub Pages automatic deployment is disabled because the linked GitHub integration cannot enable Pages for the repository. The workflow remains available for manual use after Pages is enabled.
 
 ## Next implementation steps
-1. Establish the real Vercel project once through the web UI using root directory `english-learning-app`.
-2. Verify the public app URL and `/api/ai` free-model behavior on desktop and mobile.
-3. Apply `database/schema.sql` to Neon as soon as the connector parameter bug is resolved.
-4. Add secure login/sessions only after the shared database path is working.
-5. Replace local progress with Neon sync while keeping local/offline fallback.
-6. Expand beginner lessons, vocabulary, sentence patterns, and quizzes.
-7. Test with 5–10 learner profiles/devices and keep all paths within free quotas.
+1. Verify the public app URL and `/api/ai` free-model behavior on desktop and mobile.
+2. Apply `database/schema.sql` to Neon as soon as the connector parameter bug is resolved.
+3. Add secure login/sessions only after the shared database path is working.
+4. Replace local progress with Neon sync while keeping local/offline fallback.
+5. Expand beginner lessons, vocabulary, sentence patterns, and quizzes.
+6. Test with 5–10 learner profiles/devices and keep all paths within free quotas.

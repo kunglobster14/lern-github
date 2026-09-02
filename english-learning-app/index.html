@@ -7,60 +7,39 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="description" content="My English Coach - หลักสูตรอังกฤษครบฟัง พูด อ่าน เขียน พร้อม AI Coach แบบ $0-first">
-  <link rel="manifest" href="manifest.webmanifest?v=314">
+  <link rel="manifest" href="manifest.webmanifest?v=32">
   <title>My English Coach</title>
-  <link rel="stylesheet" href="styles.css?v=314">
-  <link rel="stylesheet" href="enhancements.css?v=314">
-  <link rel="stylesheet" href="game-lab-v31.css?v=314">
-  <link rel="stylesheet" href="learning-path.css?v=314">
-  <link rel="stylesheet" href="learning-guide.css?v=314">
-  <link rel="stylesheet" href="core3000-plan.css?v=314">
-  <link rel="stylesheet" href="core3000-study.css?v=314">
-  <link rel="stylesheet" href="complete-course.css?v=314">
-  <link rel="stylesheet" href="account-gate.css?v=314">
+  <link rel="stylesheet" href="styles.css?v=32">
+  <link rel="stylesheet" href="enhancements.css?v=32">
+  <link rel="stylesheet" href="game-lab-v31.css?v=32">
+  <link rel="stylesheet" href="learning-path.css?v=32">
+  <link rel="stylesheet" href="learning-guide.css?v=32">
+  <link rel="stylesheet" href="core3000-plan.css?v=32">
+  <link rel="stylesheet" href="core3000-study.css?v=32">
+  <link rel="stylesheet" href="complete-course.css?v=32">
+  <link rel="stylesheet" href="account-gate.css?v=32">
 </head>
 <body>
-  <div class="ambient ambient-a"></div>
-  <div class="ambient ambient-b"></div>
+  <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
   <div class="app-shell">
-    <header class="topbar">
-      <div class="brand-wrap"><div class="brand-mark">M</div><div><div class="eyebrow">MY ENGLISH</div><div class="brand-title">English Coach</div></div></div>
-      <div class="top-actions"><span id="freeModeBadge" class="free-badge" data-mode="local">FREE · Checking Groq</span><button id="profileBtn" class="icon-btn profile-btn" type="button" aria-label="โปรไฟล์"><span>👤</span><b id="profileName">ผู้เรียน</b></button></div>
-    </header>
+    <header class="topbar"><div class="brand-wrap"><div class="brand-mark">M</div><div><div class="eyebrow">MY ENGLISH</div><div class="brand-title">English Coach</div></div></div><div class="top-actions"><span id="freeModeBadge" class="free-badge" data-mode="local">FREE · Checking Groq</span><button id="profileBtn" class="icon-btn profile-btn" type="button" aria-label="โปรไฟล์"><span>👤</span><b id="profileName">ผู้เรียน</b></button></div></header>
     <main id="app" aria-live="polite"></main>
-    <nav class="bottom-nav" aria-label="เมนูหลัก">
-      <button class="nav-btn active" data-view="home" type="button"><span class="nav-ico">⌂</span><span>หน้าแรก</span></button>
-      <button class="nav-btn" data-view="learn" type="button"><span class="nav-ico">Aa</span><span>คำศัพท์</span></button>
-      <button class="nav-btn nav-ai" data-view="ai" type="button"><span class="nav-ai-orb">✦</span><span>AI Coach</span></button>
-      <button class="nav-btn" data-view="review" type="button"><span class="nav-ico">↻</span><span>ทบทวน</span></button>
-      <button class="nav-btn" data-view="progress" type="button"><span class="nav-ico">◫</span><span>สถิติ</span></button>
-    </nav>
+    <nav class="bottom-nav" aria-label="เมนูหลัก"><button class="nav-btn active" data-view="home" type="button"><span class="nav-ico">⌂</span><span>หน้าแรก</span></button><button class="nav-btn" data-view="learn" type="button"><span class="nav-ico">Aa</span><span>คำศัพท์</span></button><button class="nav-btn nav-ai" data-view="ai" type="button"><span class="nav-ai-orb">✦</span><span>AI Coach</span></button><button class="nav-btn" data-view="review" type="button"><span class="nav-ico">↻</span><span>ทบทวน</span></button><button class="nav-btn" data-view="progress" type="button"><span class="nav-ico">◫</span><span>สถิติ</span></button></nav>
   </div>
-  <dialog id="profileDialog">
-    <form method="dialog" id="profileForm" class="dialog-card">
-      <div class="dialog-handle"></div><div class="mini-orb">👋</div><h2>ผู้เรียนและข้อมูลของฉัน</h2><p>ข้อมูลหลักเก็บอยู่ในอุปกรณ์นี้ก่อน จึงใช้งานได้โดยไม่เสียค่าฐานข้อมูล</p>
-      <div class="local-tools"><span class="tool-label">โปรไฟล์บนอุปกรณ์นี้</span><div class="profile-switch"><select id="profileSelect" aria-label="เลือกโปรไฟล์ผู้เรียน"></select><button id="addProfileBtn" class="mini-btn" type="button">+ เพิ่ม</button></div></div>
-      <label for="nameInput">ชื่อเล่นของโปรไฟล์นี้</label><input id="nameInput" maxlength="30" autocomplete="nickname" placeholder="เช่น กุ้ง">
-      <div class="utility-grid"><button id="exportBackupBtn" class="utility-btn" type="button">⬇ สำรองข้อมูล</button><button id="importBackupBtn" class="utility-btn" type="button">⬆ นำเข้าข้อมูล</button><button id="installAppBtn" class="utility-btn" type="button">📱 ติดตั้งแอป</button></div>
-      <input id="backupFileInput" type="file" accept="application/json,.json" hidden>
-      <p class="zero-cost-note">$0 MODE: AI ออนไลน์ใช้ Groq Free Plan เท่านั้น หากโควตาฟรีหมดหรือบริการไม่พร้อมจะเปลี่ยนเป็น Local Coach อัตโนมัติ ไม่มี paid fallback</p>
-      <div class="dialog-actions"><button value="cancel" class="secondary-btn">ปิด</button><button value="default" class="primary-btn">บันทึกชื่อ</button></div>
-    </form>
-  </dialog>
-  <script src="enhancements.js?v=314"></script>
-  <script src="app.js?v=314"></script>
-  <script src="content-pack.js?v=314"></script>
-  <script src="game-lab-v31.js?v=314"></script>
-  <script src="learning-path.js?v=314"></script>
-  <script src="learning-guide.js?v=314"></script>
-  <script src="core3000-plan.js?v=314"></script>
-  <script src="core3000-study.js?v=314"></script>
-  <script src="complete-course.js?v=314"></script>
-  <script src="vocab-unify.js?v=314"></script>
-  <script src="ai-status.js?v=314"></script>
-  <script src="ai-output-safety.js?v=314"></script>
-  <script src="account-gate.js?v=314"></script>
-  <script src="account-admin.js?v=314"></script>
-  <script src="ai-core-v31.js?v=314"></script>
+  <dialog id="profileDialog"><form method="dialog" id="profileForm" class="dialog-card"><div class="dialog-handle"></div><div class="mini-orb">👋</div><h2>ผู้เรียนและข้อมูลของฉัน</h2><p>ข้อมูลหลักเก็บอยู่ในอุปกรณ์นี้ก่อน จึงใช้งานได้โดยไม่เสียค่าฐานข้อมูล</p><div class="local-tools"><span class="tool-label">โปรไฟล์บนอุปกรณ์นี้</span><div class="profile-switch"><select id="profileSelect" aria-label="เลือกโปรไฟล์ผู้เรียน"></select><button id="addProfileBtn" class="mini-btn" type="button">+ เพิ่ม</button></div></div><label for="nameInput">ชื่อเล่นของโปรไฟล์นี้</label><input id="nameInput" maxlength="30" autocomplete="nickname" placeholder="เช่น กุ้ง"><div class="utility-grid"><button id="exportBackupBtn" class="utility-btn" type="button">⬇ สำรองข้อมูล</button><button id="importBackupBtn" class="utility-btn" type="button">⬆ นำเข้าข้อมูล</button><button id="installAppBtn" class="utility-btn" type="button">📱 ติดตั้งแอป</button></div><input id="backupFileInput" type="file" accept="application/json,.json" hidden><p class="zero-cost-note">$0 MODE: AI ออนไลน์ใช้ Groq Free Plan เท่านั้น หากโควตาฟรีหมดหรือบริการไม่พร้อมจะเปลี่ยนเป็น Local Coach อัตโนมัติ ไม่มี paid fallback</p><div class="dialog-actions"><button value="cancel" class="secondary-btn">ปิด</button><button value="default" class="primary-btn">บันทึกชื่อ</button></div></form></dialog>
+  <script src="app.js?v=32"></script>
+  <script src="enhancements.js?v=32"></script>
+  <script src="content-pack.js?v=32"></script>
+  <script src="game-lab-v31.js?v=32"></script>
+  <script src="learning-path.js?v=32"></script>
+  <script src="learning-guide.js?v=32"></script>
+  <script src="core3000-plan.js?v=32"></script>
+  <script src="core3000-study.js?v=32"></script>
+  <script src="complete-course.js?v=32"></script>
+  <script src="vocab-unify.js?v=32"></script>
+  <script src="ai-status.js?v=32"></script>
+  <script src="ai-output-safety.js?v=32"></script>
+  <script src="account-gate.js?v=32"></script>
+  <script src="account-admin.js?v=32"></script>
 </body>
 </html>

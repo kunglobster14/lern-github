@@ -1,5 +1,5 @@
-const CACHE='my-english-v12';
-const ASSETS=['./','./index.html','./styles.css?v=12','./enhancements.css?v=12','./game-lab.css?v=12','./learning-path.css?v=12','./enhancements.js?v=12','./app.js?v=12','./content-pack.js?v=12','./game-lab.js?v=12','./learning-path.js?v=12','./ai-status.js?v=12','./ai-output-safety.js?v=12','./mission-action-fix.js?v=12','./manifest.webmanifest?v=12','./app-icon.svg'];
+const CACHE='my-english-v13';
+const ASSETS=['./','./index.html','./styles.css?v=13','./enhancements.css?v=13','./game-lab.css?v=13','./learning-path.css?v=13','./core3000-plan.css?v=13','./enhancements.js?v=13','./app.js?v=13','./content-pack.js?v=13','./game-lab.js?v=13','./learning-path.js?v=13','./core3000-plan.js?v=13','./ai-status.js?v=13','./ai-output-safety.js?v=13','./mission-action-fix.js?v=13','./manifest.webmanifest?v=13','./app-icon.svg'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });

@@ -31,9 +31,9 @@ function parseCoachReply(raw) {
   }
 }
 
-async function askModel(model, messages, system) {
+async function askFreeModel(messages, system) {
   const result = await generateText({
-    model,
+    model: 'poolside/laguna-s-2.1-free',
     system,
     messages,
     temperature: 0.45,
@@ -74,16 +74,11 @@ If the learner makes an important English mistake, gently provide a corrected ve
 The learner may type Thai when stuck; help them express the same idea in simple English.
 Return ONLY valid JSON in this exact shape: {"text":"English reply","thai":"short Thai explanation or correction"}.`;
 
-    let reply;
-    try {
-      reply = await askModel('poolside/laguna-s-2.1-free', messages, system);
-    } catch (primaryError) {
-      reply = await askModel('openai/gpt-5.6-luna-fast', messages, system);
-    }
-
+    const reply = await askFreeModel(messages, system);
     res.status(200).json(reply);
   } catch (error) {
-    console.error('AI Coach error:', error);
-    res.status(503).json({ error: 'ai_unavailable' });
+    console.error('Free AI Coach unavailable:', error);
+    // Frontend automatically falls back to its local/offline coach.
+    res.status(503).json({ error: 'free_ai_unavailable', fallback: 'local_coach' });
   }
 }

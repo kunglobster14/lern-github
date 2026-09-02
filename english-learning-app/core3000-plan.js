@@ -1,0 +1,67 @@
+(()=>{
+  const TARGET=3000;
+  const DEFAULT_DAILY=12;
+  const DEFAULT_DAYS=6;
+  const reviewSchedule=[1,3,7,14,30];
+
+  function plan(){
+    state.core3000Plan=state.core3000Plan||{daily:DEFAULT_DAILY,daysPerWeek:DEFAULT_DAYS,mastered:0,startedAt:new Date().toISOString(),sourceReady:false};
+    return state.core3000Plan;
+  }
+
+  function estimate(daily,days){
+    const weekly=daily*days;
+    const weeks=Math.ceil(TARGET/weekly);
+    const months=Math.round((weeks/4.345)*10)/10;
+    return {weekly,weeks,months};
+  }
+
+  function currentMastered(){
+    const p=plan();
+    return Math.max(Number(p.mastered)||0,Array.isArray(state.known)?state.known.length:0);
+  }
+
+  function renderCard(){
+    if(view!=='home')return;
+    const app=document.querySelector('#app');
+    if(!app||document.querySelector('#core3000Plan'))return;
+    const p=plan();
+    const e=estimate(p.daily,p.daysPerWeek);
+    const mastered=currentMastered();
+    const pct=Math.min(100,Math.round(mastered/TARGET*100));
+    const anchor=document.querySelector('#learningRoadmap')||document.querySelector('#questHub')||app.querySelector('.hero');
+    if(!anchor)return;
+    const html=`<section id="core3000Plan" class="core3000-card">
+      <div class="core3000-head"><div><div class="hero-kicker">CORE 3000 PLAN</div><h2>3,000 คำ → สนทนาได้มั่นใจขึ้น</h2><p>เรียนใหม่ ${p.daily} คำ/วัน · ${p.daysPerWeek} วัน/สัปดาห์ · 1 วันทบทวนใหญ่</p></div><div class="core3000-ring"><b>${pct}%</b><span>${mastered}/${TARGET}</span></div></div>
+      <div class="core3000-progress"><i style="width:${pct}%"></i></div>
+      <div class="core3000-stats"><div><b>${p.daily}</b><span>คำใหม่/วัน</span></div><div><b>${e.weekly}</b><span>คำใหม่/สัปดาห์</span></div><div><b>~${e.weeks}</b><span>สัปดาห์</span></div><div><b>~${e.months}</b><span>เดือน</span></div></div>
+      <div class="core3000-routine"><b>🎧 วิธีผ่านแต่ละคำ</b><span>ฟัง 1 รอบ → พูดตาม 3 รอบ → บอกความหมาย → พูดประโยคตัวอย่าง 1 รอบ</span></div>
+      <div class="core3000-actions"><button type="button" class="secondary-btn" id="core3000Settings">ปรับจำนวนคำ/วัน</button><button type="button" class="primary-btn" id="core3000Start">เริ่มชุดวันนี้</button></div>
+      <small class="core3000-note">ทบทวนแบบเว้นระยะ: วัน ${reviewSchedule.join(' · ')} หลังเรียนคำใหม่</small>
+    </section>`;
+    anchor.insertAdjacentHTML('afterend',html);
+    document.querySelector('#core3000Start')?.addEventListener('click',()=>go('learn'));
+    document.querySelector('#core3000Settings')?.addEventListener('click',openSettings);
+  }
+
+  function openSettings(){
+    const p=plan();
+    const wrap=document.createElement('div');
+    wrap.className='game-lab-overlay';
+    wrap.id='core3000Modal';
+    wrap.innerHTML=`<section class="game-panel"><div class="game-panel-head"><h2>📚 แผน 3,000 คำ</h2><button class="game-close" type="button">×</button></div><div class="core3000-modal-body">
+      <p>เลือกความเร็วที่เหมาะกับชีวิตจริง ไม่ควรเร่งจนทบทวนไม่ทัน</p>
+      <div class="core3000-options">${[10,12,15,20].map(n=>{const e=estimate(n,p.daysPerWeek);return `<button class="core3000-option ${n===p.daily?'active':''}" data-daily="${n}"><b>${n} คำ/วัน</b><span>ประมาณ ${e.weeks} สัปดาห์</span></button>`}).join('')}</div>
+      <div class="core3000-pass"><h3>เกณฑ์ผ่านคำศัพท์</h3><ol><li>เห็นคำแล้วนึกความหมายได้</li><li>ได้ยินแล้วรู้ว่าเป็นคำอะไร</li><li>ออกเสียงตามได้โดยไม่ติดมาก</li><li>ใช้คำนั้นในประโยคสั้น ๆ ได้</li><li>ทบทวนผ่านอย่างน้อย 80% ในรอบ 30 วัน</li></ol></div>
+      <div class="core3000-week"><b>ตารางแนะนำ</b><span>จันทร์–เสาร์: คำใหม่ + ทบทวนคำเก่า</span><span>อาทิตย์: ไม่เพิ่มคำใหม่ เน้นฟัง พูด Quiz และ AI Conversation</span></div>
+    </div></section>`;
+    document.body.appendChild(wrap);
+    wrap.querySelector('.game-close').onclick=()=>wrap.remove();
+    wrap.addEventListener('click',e=>{if(e.target===wrap)wrap.remove()});
+    wrap.querySelectorAll('[data-daily]').forEach(btn=>btn.onclick=()=>{p.daily=Number(btn.dataset.daily)||DEFAULT_DAILY;saveState();wrap.remove();render();});
+  }
+
+  const coreRender=render;
+  render=function(){coreRender();requestAnimationFrame(renderCard)};
+  window.addEventListener('DOMContentLoaded',()=>{plan();requestAnimationFrame(renderCard)});
+})();

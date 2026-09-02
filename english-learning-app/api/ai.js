@@ -25,11 +25,8 @@ function cleanHistory(history) {
 
 function stripReasoning(raw) {
   let text = String(raw || '');
-  // Some reasoning-capable models emit internal work inside <think> tags.
-  // Never surface that content to learners.
   text = text.replace(/<think>[\s\S]*?<\/think>/gi, ' ');
-  // Defensive handling for malformed/unclosed think blocks.
-  text = text.replace(/^\s*<think>[\s\S]*?(?=\{\s*"(?:text|thai)"|```json|$)/i, ' ');
+  text = text.replace(/^\s*<think>[\s\S]*?(?=\{\s*"(?:text|thai)"|\[\s*\{|```json|$)/i, ' ');
   text = text.replace(/<\/?think>/gi, ' ');
   text = text.replace(/^```json\s*/i, '').replace(/\s*```$/i, '');
   return text.trim();
@@ -38,9 +35,12 @@ function stripReasoning(raw) {
 function extractJsonCandidate(text) {
   const cleaned = String(text || '').trim();
   if (!cleaned) return '';
-  const first = cleaned.indexOf('{');
-  const last = cleaned.lastIndexOf('}');
-  if (first >= 0 && last > first) return cleaned.slice(first, last + 1);
+  const objFirst = cleaned.indexOf('{');
+  const objLast = cleaned.lastIndexOf('}');
+  const arrFirst = cleaned.indexOf('[');
+  const arrLast = cleaned.lastIndexOf(']');
+  if (arrFirst >= 0 && arrLast > arrFirst && (objFirst < 0 || arrFirst < objFirst)) return cleaned.slice(arrFirst, arrLast + 1);
+  if (objFirst >= 0 && objLast > objFirst) return cleaned.slice(objFirst, objLast + 1);
   return cleaned;
 }
 
@@ -54,7 +54,6 @@ function parseCoachReply(raw) {
     if (!english) throw new Error('empty_json_text');
     return { text: english, thai };
   } catch {
-    // Even when the model ignores JSON formatting, only return the cleaned final answer.
     const safeText = stripReasoning(clean).slice(0, 700);
     return {
       text: safeText || 'Nice to meet you! Tell me one simple thing about your day.',
@@ -68,7 +67,7 @@ function safeFailure(model, status, payload) {
   return { model, status: Number(status) || null, code: String(apiCode || 'unknown_error').slice(0, 100) };
 }
 
-async function callGroq(model, messages, system, maxTokens = 220) {
+async function callGroqRaw(model, messages, system, maxTokens = 220) {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     const error = new Error('GROQ_API_KEY is not configured');
@@ -82,7 +81,7 @@ async function callGroq(model, messages, system, maxTokens = 220) {
     body: JSON.stringify({
       model: model.id,
       messages: [{ role: 'system', content: system }, ...messages],
-      temperature: 0.55,
+      temperature: 0.35,
       max_completion_tokens: maxTokens,
       stream: false
     })
@@ -94,15 +93,29 @@ async function callGroq(model, messages, system, maxTokens = 220) {
     error.failure = safeFailure(model.id, response.status, payload);
     throw error;
   }
+  return { raw: payload?.choices?.[0]?.message?.content || '', model: model.id, modelLabel: model.label };
+}
 
-  const raw = payload?.choices?.[0]?.message?.content || '';
-  return { ...parseCoachReply(raw), model: model.id, modelLabel: model.label, source: 'groq-free-plan', freeOnly: true };
+async function callGroq(model, messages, system, maxTokens = 220) {
+  const result = await callGroqRaw(model, messages, system, maxTokens);
+  return { ...parseCoachReply(result.raw), model: result.model, modelLabel: result.modelLabel, source: 'groq-free-plan', freeOnly: true };
 }
 
 async function askFreeModels(messages, system, maxTokens = 220) {
   const failures = [];
   for (const model of FREE_MODELS) {
     try { return await callGroq(model, messages, system, maxTokens); }
+    catch (error) { failures.push(error?.failure || { model: model.id, status: null, code: 'unknown_error' }); }
+  }
+  const error = new Error('All Groq Free Plan models are unavailable.');
+  error.failures = failures;
+  throw error;
+}
+
+async function askFreeModelsRaw(messages, system, maxTokens = 800) {
+  const failures = [];
+  for (const model of FREE_MODELS) {
+    try { return await callGroqRaw(model, messages, system, maxTokens); }
     catch (error) { failures.push(error?.failure || { model: model.id, status: null, code: 'unknown_error' }); }
   }
   const error = new Error('All Groq Free Plan models are unavailable.');
@@ -130,12 +143,48 @@ async function makeMission(body) {
   const system = `You design playful 2-minute English micro-missions for a Thai beginner named ${learner}, level ${level}.
 The current theme is ${scenario}.
 Make ONE surprising but practical challenge that can be completed by speaking or typing 1-3 short English sentences.
-Vary the mechanic: sometimes forbid one common word, sometimes require two useful phrases, sometimes role-play a tiny problem, sometimes ask the learner to transform a Thai idea into English.
-Keep it friendly, achievable, and different from a normal multiple-choice quiz.
+Vary the mechanic and keep it friendly and achievable.
 The English text must be the short mission title/challenge. The Thai field must explain exactly what to do, with one tiny example if helpful.
 Do not output analysis, reasoning, chain-of-thought, <think> tags, markdown, or commentary.
 Return ONLY valid JSON in this exact shape: {"text":"short English mission","thai":"clear Thai mission instructions"}.`;
   return askFreeModels([{ role: 'user', content: 'Create today’s surprise mission. Output only the final JSON.' }], system, 160);
+}
+
+async function makeVocabularyBatch(body) {
+  const input = Array.isArray(body.words) ? body.words : [];
+  const words = [...new Set(input.map((w) => String(w || '').toLowerCase().trim()).filter((w) => /^[a-z]+$/.test(w)))].slice(0, 20);
+  if (!words.length) throw new Error('words_required');
+
+  const system = `You create compact vocabulary cards for a Thai beginner learning practical English.
+For EVERY supplied English word, return one item in the same order.
+Use the most common everyday meaning. Thai must be concise and natural.
+Example must be one short, easy, natural English sentence that clearly demonstrates the word. exampleThai is its concise Thai translation.
+Do not output IPA, phonetic spellings, analysis, reasoning, markdown, <think> tags, or extra commentary.
+Return ONLY a valid JSON array in this exact shape:
+[{"word":"example","thai":"ตัวอย่าง","example":"This is an example.","exampleThai":"นี่คือตัวอย่าง"}]`;
+
+  const result = await askFreeModelsRaw(
+    [{ role: 'user', content: `Create cards for these words only: ${words.join(', ')}` }],
+    system,
+    Math.min(1400, 100 + words.length * 90)
+  );
+  const clean = stripReasoning(result.raw);
+  const candidate = extractJsonCandidate(clean);
+  let data;
+  try { data = JSON.parse(candidate); } catch { data = []; }
+  if (!Array.isArray(data)) data = [];
+
+  const byWord = new Map(data.map((item) => [String(item?.word || '').toLowerCase(), item]));
+  const cards = words.map((word) => {
+    const item = byWord.get(word) || {};
+    return {
+      word,
+      thai: stripReasoning(item.thai || '').slice(0, 120) || 'ดูความหมายจากตัวอย่างและฝึกใช้กับ AI Coach',
+      example: stripReasoning(item.example || '').slice(0, 180) || `I use the word ${word}.`,
+      exampleThai: stripReasoning(item.exampleThai || '').slice(0, 180) || ''
+    };
+  });
+  return { cards, model: result.model, modelLabel: result.modelLabel, source: 'groq-free-plan', freeOnly: true };
 }
 
 export default async function handler(req, res) {
@@ -152,7 +201,7 @@ export default async function handler(req, res) {
       mode: 'zero-cost-only',
       keyConfigured: Boolean(process.env.GROQ_API_KEY),
       models: FREE_MODELS.map((model) => model.id),
-      features: ['coach', 'surprise-mission'],
+      features: ['coach', 'surprise-mission', 'vocab-batch'],
       reasoningVisible: false
     });
     return;
@@ -166,6 +215,12 @@ export default async function handler(req, res) {
     if (body.mode === 'mission') {
       const reply = await makeMission(body);
       res.status(200).json({ ...reply, kind: 'surprise-mission' });
+      return;
+    }
+
+    if (body.mode === 'vocab_batch') {
+      const reply = await makeVocabularyBatch(body);
+      res.status(200).json({ ...reply, kind: 'vocab-batch' });
       return;
     }
 

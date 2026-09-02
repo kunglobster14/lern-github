@@ -1,4 +1,4 @@
-const CACHE='my-english-v3';
+const CACHE='my-english-v4';
 const ASSETS=['./','./index.html','./styles.css','./enhancements.css','./enhancements.js','./app.js','./manifest.webmanifest','./app-icon.svg'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));

@@ -4,6 +4,7 @@
   const ACTIVE_KEY='myEnglishActiveProfileV1';
   const BACKUP_FORMAT='my-english-local-backup';
   let deferredInstallPrompt=null;
+  let aiStatus={text:'FREE · Local Ready',mode:'local'};
 
   const safeParse=(value,fallback)=>{try{return JSON.parse(value)}catch{return fallback}};
   const makeId=()=>globalThis.crypto?.randomUUID?.()||`p_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
@@ -42,12 +43,41 @@
     writeStore(store);
   }
 
+  function ensureAiInlineBadge(){
+    const head=document.querySelector('.ai-head');
+    if(!head)return;
+    let chip=document.querySelector('#aiModeInline');
+    if(!chip){
+      chip=document.createElement('span');
+      chip.id='aiModeInline';
+      chip.style.cssText='display:inline-flex;align-items:center;margin-top:7px;padding:5px 9px;border-radius:999px;font-size:10px;font-weight:800;border:1px solid rgba(148,163,184,.2);letter-spacing:.02em';
+      const info=head.querySelector('div:nth-child(2)')||head;
+      info.appendChild(chip);
+    }
+    chip.textContent=aiStatus.text;
+    const online=aiStatus.mode==='online';
+    const checking=aiStatus.mode==='checking';
+    chip.style.background=online?'rgba(52,211,153,.12)':checking?'rgba(34,211,238,.12)':'rgba(148,163,184,.10)';
+    chip.style.color=online?'#6ee7b7':checking?'#67e8f9':'#cbd5e1';
+  }
+
   function setAiBadge(text,mode='local'){
+    aiStatus={text,mode};
     const el=document.querySelector('#freeModeBadge');
-    if(!el)return;
-    el.textContent=text;
-    el.dataset.mode=mode;
-    el.title=mode==='online'?'ใช้โมเดลออนไลน์ที่ราคา $0 เท่านั้น':'ใช้โหมดฝึกในเครื่อง ไม่เสียค่าใช้จ่าย';
+    if(el){
+      el.textContent=text;
+      el.dataset.mode=mode;
+      el.title=mode==='online'?'ใช้โมเดลออนไลน์ที่ราคา $0 เท่านั้น':'ใช้โหมดฝึกในเครื่อง ไม่เสียค่าใช้จ่าย';
+    }
+    ensureAiInlineBadge();
+  }
+
+  function modelName(payload){
+    const id=String(payload?.model||'');
+    if(id.includes('nemotron-3.5-lightning-free'))return 'FREE Online · Nemotron';
+    if(id.includes('ling-3.0-flash-fin-free'))return 'FREE Online · Ling';
+    if(id.includes('laguna-s-2.1-free'))return 'FREE Online · Laguna';
+    return 'AI ฟรี · Online';
   }
 
   function toast(message){
@@ -67,7 +97,17 @@
     if(isAi)setAiBadge('AI ฟรี · กำลังเชื่อม','checking');
     try{
       const response=await nativeFetch(...args);
-      if(isAi)setAiBadge(response.ok?'AI ฟรี · Online':'FREE · Local Coach',response.ok?'online':'local');
+      if(isAi){
+        let payload=null;
+        try{payload=await response.clone().json()}catch{}
+        if(response.ok){
+          setAiBadge(modelName(payload),'online');
+        }else if(payload?.authPresent===false){
+          setAiBadge('FREE · AI Auth ยังไม่พร้อม','local');
+        }else{
+          setAiBadge('FREE · Local Coach','local');
+        }
+      }
       return response;
     }catch(error){
       if(isAi)setAiBadge('FREE · Local Coach','local');
@@ -152,5 +192,8 @@
     document.querySelector('#backupFileInput')?.addEventListener('change',e=>importBackup(e.target.files?.[0]));
     document.querySelector('#installAppBtn')?.addEventListener('click',installApp);
     setAiBadge('FREE · Local Ready','local');
+    const observer=new MutationObserver(()=>ensureAiInlineBadge());
+    observer.observe(document.querySelector('#app')||document.body,{childList:true,subtree:true});
+    ensureAiInlineBadge();
   });
 })();

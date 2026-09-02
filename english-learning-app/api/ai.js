@@ -23,17 +23,41 @@ function cleanHistory(history) {
   })).filter((item) => item.content);
 }
 
+function stripReasoning(raw) {
+  let text = String(raw || '');
+  // Some reasoning-capable models emit internal work inside <think> tags.
+  // Never surface that content to learners.
+  text = text.replace(/<think>[\s\S]*?<\/think>/gi, ' ');
+  // Defensive handling for malformed/unclosed think blocks.
+  text = text.replace(/^\s*<think>[\s\S]*?(?=\{\s*"(?:text|thai)"|```json|$)/i, ' ');
+  text = text.replace(/<\/?think>/gi, ' ');
+  text = text.replace(/^```json\s*/i, '').replace(/\s*```$/i, '');
+  return text.trim();
+}
+
+function extractJsonCandidate(text) {
+  const cleaned = String(text || '').trim();
+  if (!cleaned) return '';
+  const first = cleaned.indexOf('{');
+  const last = cleaned.lastIndexOf('}');
+  if (first >= 0 && last > first) return cleaned.slice(first, last + 1);
+  return cleaned;
+}
+
 function parseCoachReply(raw) {
-  const text = String(raw || '').trim().replace(/^```json\s*/i, '').replace(/\s*```$/i, '');
+  const clean = stripReasoning(raw);
+  const candidate = extractJsonCandidate(clean);
   try {
-    const value = JSON.parse(text);
-    const english = String(value?.text || '').trim().slice(0, 700);
-    const thai = String(value?.thai || '').trim().slice(0, 500);
+    const value = JSON.parse(candidate);
+    const english = stripReasoning(value?.text).slice(0, 700);
+    const thai = stripReasoning(value?.thai).slice(0, 500);
     if (!english) throw new Error('empty_json_text');
     return { text: english, thai };
   } catch {
+    // Even when the model ignores JSON formatting, only return the cleaned final answer.
+    const safeText = stripReasoning(clean).slice(0, 700);
     return {
-      text: text.slice(0, 700) || 'Nice to meet you! Tell me one simple thing about your day.',
+      text: safeText || 'Nice to meet you! Tell me one simple thing about your day.',
       thai: 'AI ตอบกลับมาแล้วครับ ลองตอบต่อเป็นประโยคอังกฤษสั้น ๆ ได้เลย'
     };
   }
@@ -90,7 +114,7 @@ async function runProbe() {
   try {
     const reply = await askFreeModels(
       [{ role: 'user', content: 'Reply with exactly OK.' }],
-      'You are a connectivity probe. Reply with exactly OK and nothing else.',
+      'You are a connectivity probe. Reply with exactly OK and nothing else. Do not output reasoning.',
       8
     );
     return { ok: true, online: true, provider: 'groq-free-plan', mode: 'zero-cost-only', model: reply.model, modelLabel: reply.modelLabel };
@@ -109,8 +133,9 @@ Make ONE surprising but practical challenge that can be completed by speaking or
 Vary the mechanic: sometimes forbid one common word, sometimes require two useful phrases, sometimes role-play a tiny problem, sometimes ask the learner to transform a Thai idea into English.
 Keep it friendly, achievable, and different from a normal multiple-choice quiz.
 The English text must be the short mission title/challenge. The Thai field must explain exactly what to do, with one tiny example if helpful.
+Do not output analysis, reasoning, chain-of-thought, <think> tags, markdown, or commentary.
 Return ONLY valid JSON in this exact shape: {"text":"short English mission","thai":"clear Thai mission instructions"}.`;
-  return askFreeModels([{ role: 'user', content: 'Create today’s surprise mission.' }], system, 160);
+  return askFreeModels([{ role: 'user', content: 'Create today’s surprise mission. Output only the final JSON.' }], system, 160);
 }
 
 export default async function handler(req, res) {
@@ -127,7 +152,8 @@ export default async function handler(req, res) {
       mode: 'zero-cost-only',
       keyConfigured: Boolean(process.env.GROQ_API_KEY),
       models: FREE_MODELS.map((model) => model.id),
-      features: ['coach', 'surprise-mission']
+      features: ['coach', 'surprise-mission'],
+      reasoningVisible: false
     });
     return;
   }
@@ -157,6 +183,7 @@ Use very simple, natural everyday English. Keep the English to 1-3 short sentenc
 If the learner's English is correct, briefly reinforce the natural sentence. If it needs correction, show the corrected sentence gently.
 The Thai field must be a short, useful explanation, correction, or suggested phrase in Thai. Do not give a long grammar lecture.
 The learner may type Thai when stuck; help them say the same idea in simple English.
+Do not output analysis, reasoning, chain-of-thought, <think> tags, markdown, or commentary.
 Return ONLY valid JSON in this exact shape: {"text":"English coach reply","thai":"short Thai coaching note"}.`;
 
     const reply = await askFreeModels(messages, system);

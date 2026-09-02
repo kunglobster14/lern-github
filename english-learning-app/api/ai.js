@@ -1,3 +1,5 @@
+import { generateText } from 'ai';
+
 const SCENARIOS = {
   coffee: 'ordering food and drinks at a cafe',
   travel: 'travel, transportation, hotels, and asking for directions',
@@ -5,17 +7,13 @@ const SCENARIOS = {
   daily: 'daily life and friendly small talk'
 };
 
-// Zero-cost policy: only models whose Vercel AI Gateway pages explicitly mark
-// input/output as Free are allowed here. There is no paid fallback.
+// Zero-cost policy: only model IDs currently designated as Free are allowed.
+// There is intentionally no paid-model fallback.
 const FREE_MODELS = [
   { id: 'nvidia/nemotron-3.5-lightning-free', label: 'Nemotron 3.5 Lightning Free' },
   { id: 'inclusionai/ling-3.0-flash-fin-free', label: 'Ling 3.0 Flash Fin Free' },
   { id: 'poolside/laguna-s-2.1-free', label: 'Laguna S 2.1 Free' }
 ];
-
-function gatewayToken() {
-  return process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN || '';
-}
 
 function cleanHistory(history) {
   if (!Array.isArray(history)) return [];
@@ -41,71 +39,38 @@ function parseCoachReply(raw) {
   }
 }
 
-async function callGateway(model, messages, system) {
-  const token = gatewayToken();
-  if (!token) {
-    const error = new Error('Vercel AI Gateway authentication is not available in this deployment.');
-    error.code = 'gateway_auth_missing';
-    throw error;
-  }
+async function callFreeModel(model, messages, system) {
+  // In Vercel production, plain string model IDs let the AI SDK use
+  // Vercel's runtime-injected OIDC authentication automatically.
+  const result = await generateText({
+    model: model.id,
+    system,
+    messages,
+    temperature: 0.35,
+    maxOutputTokens: 220
+  });
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
-  try {
-    const response = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        authorization: `Bearer ${token}`
-      },
-      signal: controller.signal,
-      body: JSON.stringify({
-        model: model.id,
-        messages: [{ role: 'system', content: system }, ...messages],
-        temperature: 0.35,
-        max_tokens: 220,
-        stream: false
-      })
-    });
-
-    if (!response.ok) {
-      const error = new Error(`AI Gateway returned HTTP ${response.status}`);
-      error.code = `gateway_http_${response.status}`;
-      throw error;
-    }
-
-    const payload = await response.json();
-    const raw = payload?.choices?.[0]?.message?.content;
-    if (!raw) {
-      const error = new Error('AI Gateway returned no message content.');
-      error.code = 'gateway_empty_response';
-      throw error;
-    }
-
-    return {
-      ...parseCoachReply(raw),
-      model: model.id,
-      modelLabel: model.label,
-      source: 'vercel-ai-gateway',
-      freeOnly: true
-    };
-  } finally {
-    clearTimeout(timeout);
-  }
+  return {
+    ...parseCoachReply(result.text),
+    model: model.id,
+    modelLabel: model.label,
+    source: 'vercel-ai-gateway-oidc',
+    freeOnly: true
+  };
 }
 
 async function askFreeModels(messages, system) {
   const failures = [];
   for (const model of FREE_MODELS) {
     try {
-      return await callGateway(model, messages, system);
+      return await callFreeModel(model, messages, system);
     } catch (error) {
-      failures.push({ model: model.id, code: error?.code || error?.name || 'unknown_error' });
-      console.warn(`Free AI model unavailable: ${model.id} (${error?.code || error?.name || 'unknown'})`);
+      const code = error?.statusCode || error?.status || error?.name || 'unknown_error';
+      failures.push({ model: model.id, code: String(code).slice(0, 80) });
+      console.warn(`Free AI model unavailable: ${model.id} (${code})`);
     }
   }
   const error = new Error('All zero-cost AI models are unavailable.');
-  error.code = 'all_free_models_unavailable';
   error.failures = failures;
   throw error;
 }
@@ -119,14 +84,11 @@ export default async function handler(req, res) {
     return;
   }
 
-  // Safe health check: booleans only, never returns tokens or secrets.
   if (req.method === 'GET') {
     res.status(200).json({
       ok: true,
       mode: 'zero-cost-only',
-      authPresent: Boolean(gatewayToken()),
-      oidcPresent: Boolean(process.env.VERCEL_OIDC_TOKEN),
-      apiKeyPresent: Boolean(process.env.AI_GATEWAY_API_KEY),
+      authMode: 'vercel-runtime-oidc',
       models: FREE_MODELS.map((model) => model.id)
     });
     return;
@@ -161,12 +123,11 @@ Return ONLY valid JSON in this exact shape: {"text":"English coach reply","thai"
     const reply = await askFreeModels(messages, system);
     res.status(200).json(reply);
   } catch (error) {
-    console.error('Zero-cost AI Coach unavailable:', error?.code || error?.name || 'unknown');
+    console.error('Zero-cost AI Coach unavailable');
     res.status(503).json({
       error: 'free_ai_unavailable',
       fallback: 'local_coach',
       freeOnly: true,
-      authPresent: Boolean(gatewayToken()),
       failures: Array.isArray(error?.failures) ? error.failures : []
     });
   }

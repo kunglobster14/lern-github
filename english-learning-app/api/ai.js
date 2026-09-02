@@ -7,8 +7,6 @@ const SCENARIOS = {
   daily: 'daily life and friendly small talk'
 };
 
-// Zero-cost policy: only model IDs currently designated as Free are allowed.
-// There is intentionally no paid-model fallback.
 const FREE_MODELS = [
   { id: 'nvidia/nemotron-3.5-lightning-free', label: 'Nemotron 3.5 Lightning Free' },
   { id: 'inclusionai/ling-3.0-flash-fin-free', label: 'Ling 3.0 Flash Fin Free' },
@@ -21,6 +19,13 @@ function cleanHistory(history) {
     role: item?.role === 'user' ? 'user' : 'assistant',
     content: String(item?.text || '').slice(0, 500)
   })).filter((item) => item.content);
+}
+
+function safeError(error) {
+  const status = error?.statusCode || error?.status || error?.response?.status || null;
+  const name = String(error?.name || 'Error').slice(0, 50);
+  const code = String(error?.code || status || name || 'unknown_error').slice(0, 80);
+  return { code, status: Number(status) || null };
 }
 
 function parseCoachReply(raw) {
@@ -39,17 +44,14 @@ function parseCoachReply(raw) {
   }
 }
 
-async function callFreeModel(model, messages, system) {
-  // In Vercel production, plain string model IDs let the AI SDK use
-  // Vercel's runtime-injected OIDC authentication automatically.
+async function callFreeModel(model, messages, system, maxOutputTokens = 220) {
   const result = await generateText({
     model: model.id,
     system,
     messages,
     temperature: 0.35,
-    maxOutputTokens: 220
+    maxOutputTokens
   });
-
   return {
     ...parseCoachReply(result.text),
     model: model.id,
@@ -59,20 +61,32 @@ async function callFreeModel(model, messages, system) {
   };
 }
 
-async function askFreeModels(messages, system) {
+async function askFreeModels(messages, system, maxOutputTokens = 220) {
   const failures = [];
   for (const model of FREE_MODELS) {
     try {
-      return await callFreeModel(model, messages, system);
+      return await callFreeModel(model, messages, system, maxOutputTokens);
     } catch (error) {
-      const code = error?.statusCode || error?.status || error?.name || 'unknown_error';
-      failures.push({ model: model.id, code: String(code).slice(0, 80) });
-      console.warn(`Free AI model unavailable: ${model.id} (${code})`);
+      failures.push({ model: model.id, ...safeError(error) });
+      console.warn(`Free AI model unavailable: ${model.id}`, safeError(error));
     }
   }
   const error = new Error('All zero-cost AI models are unavailable.');
   error.failures = failures;
   throw error;
+}
+
+async function runProbe() {
+  try {
+    const reply = await askFreeModels(
+      [{ role: 'user', content: 'Reply with exactly OK.' }],
+      'You are a connectivity probe. Reply with exactly OK and nothing else.',
+      8
+    );
+    return { ok: true, online: true, mode: 'zero-cost-only', model: reply.model, modelLabel: reply.modelLabel };
+  } catch (error) {
+    return { ok: true, online: false, mode: 'zero-cost-only', failures: Array.isArray(error?.failures) ? error.failures : [] };
+  }
 }
 
 export default async function handler(req, res) {
@@ -85,6 +99,11 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'GET') {
+    if (String(req.query?.probe || '') === '1') {
+      const result = await runProbe();
+      res.status(200).json(result);
+      return;
+    }
     res.status(200).json({
       ok: true,
       mode: 'zero-cost-only',
@@ -123,12 +142,12 @@ Return ONLY valid JSON in this exact shape: {"text":"English coach reply","thai"
     const reply = await askFreeModels(messages, system);
     res.status(200).json(reply);
   } catch (error) {
-    console.error('Zero-cost AI Coach unavailable');
+    console.error('Zero-cost AI Coach unavailable', Array.isArray(error?.failures) ? error.failures : safeError(error));
     res.status(503).json({
       error: 'free_ai_unavailable',
       fallback: 'local_coach',
       freeOnly: true,
-      failures: Array.isArray(error?.failures) ? error.failures : []
+      failures: Array.isArray(error?.failures) ? error.failures : [safeError(error)]
     });
   }
 }

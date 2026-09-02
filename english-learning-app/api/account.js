@@ -16,7 +16,7 @@ export default async function handler(req,res){
     if(req.method==='GET'){
       const user=await currentUser(req);
       const count=await userCount(pool);
-      json(res,200,{ok:true,dbConfigured:true,dbReady:true,databaseMode:cfg.mode,authenticated:Boolean(user),user:user?{id:user.id,username:user.username,displayName:user.display_name,role:user.role}:null,userCount:count,maxUsers:10,publicRegistration:cfg.mode==='temporary'||count===0});
+      json(res,200,{ok:true,dbConfigured:true,dbReady:true,databaseMode:cfg.mode,authenticated:Boolean(user),user:user?{id:user.id,username:user.username,displayName:user.display_name,role:user.role}:null,userCount:count,maxUsers:10,publicRegistration:count===0||process.env.MYENGLISH_REGISTRATION_OPEN==='1'});
       return;
     }
     if(req.method!=='POST'){json(res,405,{error:'method_not_allowed'});return}
@@ -42,7 +42,7 @@ export default async function handler(req,res){
 
     if(action==='register'){
       const count=await userCount(pool);
-      const allow=cfg.mode==='temporary'||count===0||process.env.MYENGLISH_REGISTRATION_OPEN==='1';
+      const allow=count===0||process.env.MYENGLISH_REGISTRATION_OPEN==='1';
       if(!allow){json(res,403,{error:'registration_closed'});return}
       if(count>=10){json(res,409,{error:'user_limit_reached'});return}
       const {username,key}=normalizeUsername(body.username);

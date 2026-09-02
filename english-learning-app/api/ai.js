@@ -2,7 +2,11 @@ const SCENARIOS = {
   coffee: 'ordering food and drinks at a cafe',
   travel: 'travel, transportation, hotels, and asking for directions',
   work: 'simple workplace conversation',
-  daily: 'daily life and friendly small talk'
+  daily: 'daily life and friendly small talk',
+  restaurant: 'ordering food, asking about dishes, and paying at a restaurant',
+  shopping: 'shopping, asking prices, sizes, colors, and paying',
+  hotel: 'checking in, asking about rooms, facilities, and simple hotel needs',
+  airport: 'airport check-in, gates, baggage, and simple flight questions'
 };
 
 // Zero-cost policy: Groq Free Plan only. No paid-provider fallback.

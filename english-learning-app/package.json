@@ -1,0 +1,12 @@
+{
+  "name": "my-english-coach",
+  "version": "2.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "ai": "7.0.87"
+  }
+}

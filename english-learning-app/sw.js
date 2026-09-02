@@ -1,5 +1,5 @@
-const CACHE='my-english-v14';
-const ASSETS=['./','./index.html','./styles.css?v=14','./enhancements.css?v=14','./game-lab.css?v=14','./learning-path.css?v=14','./core3000-plan.css?v=14','./core3000-study.css?v=14','./enhancements.js?v=14','./app.js?v=14','./content-pack.js?v=14','./game-lab.js?v=14','./learning-path.js?v=14','./core3000-plan.js?v=14','./core3000-study.js?v=14','./ai-status.js?v=14','./ai-output-safety.js?v=14','./mission-action-fix.js?v=14','./manifest.webmanifest?v=14','./app-icon.svg'];
+const CACHE='my-english-v15';
+const ASSETS=['./','./index.html','./styles.css?v=15','./enhancements.css?v=15','./game-lab.css?v=15','./learning-path.css?v=15','./core3000-plan.css?v=15','./core3000-study.css?v=15','./enhancements.js?v=15','./app.js?v=15','./content-pack.js?v=15','./game-lab.js?v=15','./learning-path.js?v=15','./core3000-plan.js?v=15','./core3000-study.js?v=15','./ai-status.js?v=15','./ai-output-safety.js?v=15','./mission-action-fix.js?v=15','./manifest.webmanifest?v=15','./app-icon.svg'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });

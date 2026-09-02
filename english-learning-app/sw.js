@@ -1,5 +1,5 @@
-const CACHE='my-english-v13';
-const ASSETS=['./','./index.html','./styles.css?v=13','./enhancements.css?v=13','./game-lab.css?v=13','./learning-path.css?v=13','./core3000-plan.css?v=13','./enhancements.js?v=13','./app.js?v=13','./content-pack.js?v=13','./game-lab.js?v=13','./learning-path.js?v=13','./core3000-plan.js?v=13','./ai-status.js?v=13','./ai-output-safety.js?v=13','./mission-action-fix.js?v=13','./manifest.webmanifest?v=13','./app-icon.svg'];
+const CACHE='my-english-v14';
+const ASSETS=['./','./index.html','./styles.css?v=14','./enhancements.css?v=14','./game-lab.css?v=14','./learning-path.css?v=14','./core3000-plan.css?v=14','./core3000-study.css?v=14','./enhancements.js?v=14','./app.js?v=14','./content-pack.js?v=14','./game-lab.js?v=14','./learning-path.js?v=14','./core3000-plan.js?v=14','./core3000-study.js?v=14','./ai-status.js?v=14','./ai-output-safety.js?v=14','./mission-action-fix.js?v=14','./manifest.webmanifest?v=14','./app-icon.svg'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });

@@ -1,1 +1,1 @@
-{"name":"My English Coach","short_name":"My English","start_url":"./","display":"standalone","background_color":"#07111f","theme_color":"#7c3aed","description":"แอปฝึกภาษาอังกฤษแบบ Mobile-first พร้อม AI Coach","icons":[]}
+{"name":"My English Coach","short_name":"English Coach","description":"ฝึกภาษาอังกฤษด้วย AI บนมือถือ","start_url":"/","display":"standalone","background_color":"#06111d","theme_color":"#06111d","icons":[{"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}

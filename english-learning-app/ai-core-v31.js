@@ -1,23 +1,19 @@
 (()=>{
   const EXTRA={restaurant:{label:'🍽️ ร้านอาหาร',opening:'Hello! Welcome to the restaurant. What would you like to order?',hint:'ลองตอบ: I would like chicken and rice, please.'},shopping:{label:'🛍️ ซื้อของ',opening:'Hello! Can I help you find something?',hint:'ลองตอบ: How much is this?'},hotel:{label:'🏨 โรงแรม',opening:'Hello! Welcome to the hotel. How can I help you?',hint:'ลองตอบ: I have a reservation.'},airport:{label:'🛫 สนามบิน',opening:'Hello! How can I help you at the airport today?',hint:'ลองตอบ: Where is gate twelve?'}};
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function normalize(){try{Object.assign(scenarios,EXTRA);if(!scenarios[state.scenario])state.scenario='daily';if(!Array.isArray(state.chat))state.chat=[]}catch{}}
   function releaseModalLayer(){
-    let hadModal=false;
     document.querySelectorAll('dialog[open],#gameLabModal').forEach(d=>{
       if(d.id==='profileDialog'&&!d.open)return;
-      hadModal=true;
       try{if(typeof d.close==='function'&&d.open)d.close()}catch{}
       if(d.id==='gameLabModal')try{d.remove()}catch{}
     });
     document.querySelectorAll('.app-shell,#app,.bottom-nav,.topbar').forEach(el=>{try{el.inert=false}catch{}el.removeAttribute('inert');if(el.getAttribute('aria-hidden')==='true')el.removeAttribute('aria-hidden')});
     document.documentElement.classList.remove('game-open');
     document.body?.classList.remove('game-open');
-    return hadModal;
   }
   function afterModalRelease(fn){
-    const hadModal=releaseModalLayer();
-    if(!hadModal)return fn();
+    releaseModalLayer();
     requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(()=>{releaseModalLayer();fn()},0)));
     return true;
   }
@@ -34,5 +30,5 @@
   try{sendChat=send;changeScenario=change}catch{}
   const boot=()=>{normalize();if(new URL(location.href).searchParams.get('view')==='ai')setTimeout(()=>enter(),0)};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-  window.__aiCoreV31={enter,render:renderAI,send,releaseModalLayer,version:'31.1'};
+  window.__aiCoreV31={enter,render:renderAI,send,releaseModalLayer,version:'31.2'};
 })();

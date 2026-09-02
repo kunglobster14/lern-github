@@ -1,5 +1,3 @@
-import { generateText } from 'ai';
-
 const SCENARIOS = {
   coffee: 'ordering food and drinks at a cafe',
   travel: 'travel, transportation, hotels, and asking for directions',
@@ -7,10 +5,10 @@ const SCENARIOS = {
   daily: 'daily life and friendly small talk'
 };
 
+// Zero-cost policy: Groq Free Plan only. No paid-provider fallback.
 const FREE_MODELS = [
-  { id: 'nvidia/nemotron-3.5-lightning-free', label: 'Nemotron 3.5 Lightning Free' },
-  { id: 'inclusionai/ling-3.0-flash-fin-free', label: 'Ling 3.0 Flash Fin Free' },
-  { id: 'poolside/laguna-s-2.1-free', label: 'Laguna S 2.1 Free' }
+  { id: 'qwen/qwen3.6-27b', label: 'Qwen 3.6 27B' },
+  { id: 'openai/gpt-oss-20b', label: 'GPT-OSS 20B' }
 ];
 
 function cleanHistory(history) {
@@ -19,13 +17,6 @@ function cleanHistory(history) {
     role: item?.role === 'user' ? 'user' : 'assistant',
     content: String(item?.text || '').slice(0, 500)
   })).filter((item) => item.content);
-}
-
-function safeError(error) {
-  const status = error?.statusCode || error?.status || error?.response?.status || null;
-  const name = String(error?.name || 'Error').slice(0, 50);
-  const code = String(error?.code || status || name || 'unknown_error').slice(0, 80);
-  return { code, status: Number(status) || null };
 }
 
 function parseCoachReply(raw) {
@@ -44,34 +35,68 @@ function parseCoachReply(raw) {
   }
 }
 
-async function callFreeModel(model, messages, system, maxOutputTokens = 220) {
-  const result = await generateText({
-    model: model.id,
-    system,
-    messages,
-    temperature: 0.35,
-    maxOutputTokens
-  });
+function safeFailure(model, status, payload) {
+  const apiCode = payload?.error?.code || payload?.error?.type || payload?.error?.message || `HTTP_${status || 0}`;
   return {
-    ...parseCoachReply(result.text),
+    model,
+    status: Number(status) || null,
+    code: String(apiCode || 'unknown_error').slice(0, 100)
+  };
+}
+
+async function callGroq(model, messages, system, maxTokens = 220) {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    const error = new Error('GROQ_API_KEY is not configured');
+    error.failure = { model: model.id, status: null, code: 'MISSING_GROQ_API_KEY' };
+    throw error;
+  }
+
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: model.id,
+      messages: [
+        { role: 'system', content: system },
+        ...messages
+      ],
+      temperature: 0.35,
+      max_completion_tokens: maxTokens,
+      stream: false
+    })
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error('Groq request failed');
+    error.failure = safeFailure(model.id, response.status, payload);
+    throw error;
+  }
+
+  const raw = payload?.choices?.[0]?.message?.content || '';
+  return {
+    ...parseCoachReply(raw),
     model: model.id,
     modelLabel: model.label,
-    source: 'vercel-ai-gateway-oidc',
+    source: 'groq-free-plan',
     freeOnly: true
   };
 }
 
-async function askFreeModels(messages, system, maxOutputTokens = 220) {
+async function askFreeModels(messages, system, maxTokens = 220) {
   const failures = [];
   for (const model of FREE_MODELS) {
     try {
-      return await callFreeModel(model, messages, system, maxOutputTokens);
+      return await callGroq(model, messages, system, maxTokens);
     } catch (error) {
-      failures.push({ model: model.id, ...safeError(error) });
-      console.warn(`Free AI model unavailable: ${model.id}`, safeError(error));
+      failures.push(error?.failure || { model: model.id, status: null, code: 'unknown_error' });
     }
   }
-  const error = new Error('All zero-cost AI models are unavailable.');
+  const error = new Error('All Groq Free Plan models are unavailable.');
   error.failures = failures;
   throw error;
 }
@@ -83,9 +108,22 @@ async function runProbe() {
       'You are a connectivity probe. Reply with exactly OK and nothing else.',
       8
     );
-    return { ok: true, online: true, mode: 'zero-cost-only', model: reply.model, modelLabel: reply.modelLabel };
+    return {
+      ok: true,
+      online: true,
+      provider: 'groq-free-plan',
+      mode: 'zero-cost-only',
+      model: reply.model,
+      modelLabel: reply.modelLabel
+    };
   } catch (error) {
-    return { ok: true, online: false, mode: 'zero-cost-only', failures: Array.isArray(error?.failures) ? error.failures : [] };
+    return {
+      ok: true,
+      online: false,
+      provider: 'groq-free-plan',
+      mode: 'zero-cost-only',
+      failures: Array.isArray(error?.failures) ? error.failures : []
+    };
   }
 }
 
@@ -100,14 +138,14 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     if (String(req.query?.probe || '') === '1') {
-      const result = await runProbe();
-      res.status(200).json(result);
+      res.status(200).json(await runProbe());
       return;
     }
     res.status(200).json({
       ok: true,
+      provider: 'groq-free-plan',
       mode: 'zero-cost-only',
-      authMode: 'vercel-runtime-oidc',
+      keyConfigured: Boolean(process.env.GROQ_API_KEY),
       models: FREE_MODELS.map((model) => model.id)
     });
     return;
@@ -142,12 +180,12 @@ Return ONLY valid JSON in this exact shape: {"text":"English coach reply","thai"
     const reply = await askFreeModels(messages, system);
     res.status(200).json(reply);
   } catch (error) {
-    console.error('Zero-cost AI Coach unavailable', Array.isArray(error?.failures) ? error.failures : safeError(error));
     res.status(503).json({
       error: 'free_ai_unavailable',
       fallback: 'local_coach',
+      provider: 'groq-free-plan',
       freeOnly: true,
-      failures: Array.isArray(error?.failures) ? error.failures : [safeError(error)]
+      failures: Array.isArray(error?.failures) ? error.failures : []
     });
   }
 }

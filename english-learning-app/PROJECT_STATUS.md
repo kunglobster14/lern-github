@@ -1,47 +1,9 @@
-# Project status — My English Coach
+# My English Coach — Project Status
 
-## Ready
-- Mobile-first V3 UI
-- Vocabulary learning + Thai pronunciation hints
-- Quiz + XP + weak-word review
-- Speech synthesis (English voice)
-- Microphone speech recognition where browser supports it
-- AI Coach UI with coffee, travel, work, and daily-life scenarios
-- AI backend uses Groq Free Plan only; no paid-provider fallback
-- Current Groq model order: `qwen/qwen3.6-27b` → `openai/gpt-oss-20b` → Local Coach
-- Groq production AI verified from the public site: status displays `FREE Online · Groq Qwen`
-- Offline/local fallback coach when the Groq Free Plan is unavailable or rate-limited
-- FREE MODE status badge (online free-plan AI vs Local Coach)
-- Multiple learner profiles on the same device
-- Export/import JSON backup for all local learner profiles
-- PWA install controls, manifest, app icon, and service worker
-- Offline caching of app shell and local-first assets
-- Groq serverless endpoint in `api/ai.js`
-- Neon V2 schema prepared for 5–10 learners
-- User accounts, sessions, progress, spaced review, quiz history, study sessions, and AI conversation tables are defined
-- Vercel Hobby project `my-english-coach-free` created through the web UI
-- GitHub → Vercel auto-deploy tested end-to-end
-- Production domain confirmed
-- `GROQ_API_KEY` configured as a Production Secret in Vercel
+Current production recovery target: V31.
 
-## Current zero-cost behavior
-Learner progress is stored locally in the browser/device. Each device can hold multiple learner profiles and export a backup file. This keeps the app usable at $0 even before the shared database is connected.
+V31 replaces the previous layered Game Lab modal/event patches with a single Game Lab implementation using native HTML `<dialog>` and replaces layered AI routing patches with one authoritative AI core. The goals are: reliable modal close/touch behavior on mobile, no background touch-through while a game is open, reliable AI navigation and send flow, and a larger non-repetitive game set.
 
-## Zero-cost policy
-- Hosting: Vercel Hobby only
-- AI: Groq Free Plan only; if the free-plan quota is unavailable, fall back to Local Coach
-- Speech: browser/device speech APIs
-- Storage: avoid cloud file storage unless required
-- No auto top-up and no paid fallback paths
+Do not re-enable the old `game-lab.js`, `game-lab-plus.js`, `game-flow.js`, `ai-route-core.js`, `mission-action-fix.js`, `ai-resilience.js`, `ui-safety.js`, `ui-smoke.js`, or `app-v27-stability.js` from `index.html` without a deliberate regression review.
 
-## External connector blockers
-- Neon connector previously exposed camelCase parameters while its backend expected snake_case. Re-test before applying schema.
-- Vercel project exists and deployments succeed, but the Vercel read connector has been inconsistent for the new project. GitHub deployment status remains a reliable verification path.
-- GitHub Pages automatic deployment is disabled because the linked GitHub integration cannot enable Pages for the repository.
-
-## Next implementation steps
-1. Re-test Neon connector and apply `database/schema.sql` safely if available.
-2. Add secure login/sessions after the shared database path is working.
-3. Replace local progress with Neon sync while keeping local/offline fallback.
-4. Expand beginner lessons, vocabulary, sentence patterns, and quizzes.
-5. Test with 5–10 learner profiles/devices and keep all paths within free quotas.
+The app remains $0-first and uses Groq free only for online AI, with Local Coach fallback.

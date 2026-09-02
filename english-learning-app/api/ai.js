@@ -7,6 +7,13 @@ const SCENARIOS = {
   daily: 'daily life and friendly small talk'
 };
 
+// Zero-cost policy: every remote model in this list is explicitly priced Free
+// on Vercel AI Gateway. If all fail, the frontend falls back to Local Coach.
+const FREE_MODELS = [
+  'inclusionai/ling-3.0-flash-free',
+  'poolside/laguna-s-2.1-free'
+];
+
 function cleanHistory(history) {
   if (!Array.isArray(history)) return [];
   return history.slice(-8).map((item) => ({
@@ -31,15 +38,24 @@ function parseCoachReply(raw) {
   }
 }
 
-async function askFreeModel(messages, system) {
-  const result = await generateText({
-    model: 'poolside/laguna-s-2.1-free',
-    system,
-    messages,
-    temperature: 0.45,
-    maxOutputTokens: 220
-  });
-  return parseCoachReply(result.text);
+async function askFreeModels(messages, system) {
+  let lastError;
+  for (const model of FREE_MODELS) {
+    try {
+      const result = await generateText({
+        model,
+        system,
+        messages,
+        temperature: 0.45,
+        maxOutputTokens: 220
+      });
+      return { ...parseCoachReply(result.text), model, freeOnly: true };
+    } catch (error) {
+      lastError = error;
+      console.warn(`Free AI model unavailable: ${model}`);
+    }
+  }
+  throw lastError || new Error('No free AI model available');
 }
 
 export default async function handler(req, res) {
@@ -70,15 +86,15 @@ export default async function handler(req, res) {
 
     const system = `You are My English Coach for a Thai beginner named ${learner}. Practice ${scenario}.
 Keep each response short and useful: 1-3 simple English sentences, then ask one easy follow-up question.
+Use beginner-friendly vocabulary and natural everyday English.
 If the learner makes an important English mistake, gently provide a corrected version without giving a long grammar lecture.
 The learner may type Thai when stuck; help them express the same idea in simple English.
 Return ONLY valid JSON in this exact shape: {"text":"English reply","thai":"short Thai explanation or correction"}.`;
 
-    const reply = await askFreeModel(messages, system);
+    const reply = await askFreeModels(messages, system);
     res.status(200).json(reply);
   } catch (error) {
-    console.error('Free AI Coach unavailable:', error);
-    // Frontend automatically falls back to its local/offline coach.
-    res.status(503).json({ error: 'free_ai_unavailable', fallback: 'local_coach' });
+    console.error('All free AI Coach models unavailable:', error);
+    res.status(503).json({ error: 'free_ai_unavailable', fallback: 'local_coach', freeOnly: true });
   }
 }

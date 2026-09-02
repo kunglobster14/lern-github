@@ -1,5 +1,5 @@
-const CACHE='my-english-v10';
-const ASSETS=['./','./index.html','./styles.css?v=10','./enhancements.css?v=10','./game-lab.css?v=10','./enhancements.js?v=10','./app.js?v=10','./content-pack.js?v=10','./game-lab.js?v=10','./ai-status.js?v=10','./ai-output-safety.js?v=10','./manifest.webmanifest?v=10','./app-icon.svg'];
+const CACHE='my-english-v11';
+const ASSETS=['./','./index.html','./styles.css?v=11','./enhancements.css?v=11','./game-lab.css?v=11','./enhancements.js?v=11','./app.js?v=11','./content-pack.js?v=11','./game-lab.js?v=11','./ai-status.js?v=11','./ai-output-safety.js?v=11','./mission-action-fix.js?v=11','./manifest.webmanifest?v=11','./app-icon.svg'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });

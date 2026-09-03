@@ -30,7 +30,7 @@ assert.equal(missingExampleThai.length,0,`Rows without Thai example: ${missingEx
 const ids=rows.map((r,i)=>read(r,'id',0)??i+1);
 assert.equal(new Set(ids).size,3000,'Oxford IDs are not unique');
 
-const jsFiles=['learner-level.js','oxford3000-loader.js','oxford3000-core.js','core3000-study.js','core3000-library.js','oxford3000-practice.js','oxford3000-stories.js','oxford3000-story-upgrade.js','oxford3000-story-speed.js','core3000-plan.js','account-gate.js'];
+const jsFiles=['learner-level.js','sentence-coach.js','oxford3000-loader.js','oxford3000-core.js','core3000-study.js','core3000-library.js','oxford3000-practice.js','oxford3000-stories.js','oxford3000-story-upgrade.js','oxford3000-story-speed.js','core3000-plan.js','account-gate.js'];
 for(const file of jsFiles){
   const check=spawnSync(process.execPath,['--check',path.join(root,file)],{encoding:'utf8'});
   assert.equal(check.status,0,`${file} syntax error:\n${check.stderr||check.stdout}`);
@@ -72,6 +72,15 @@ const quizSource=fs.readFileSync(path.join(root,'oxford3000-practice.js'),'utf8'
 assert(studySource.includes('filterOxfordByLearnerLevel'),'Daily Oxford study must respect learner level');
 assert(quizSource.includes('filterOxfordByLearnerLevel'),'Oxford quiz must respect learner level');
 
+const sentenceSource=fs.readFileSync(path.join(root,'sentence-coach.js'),'utf8');
+assert(sentenceSource.includes("const VERSION='v51'"),'Sentence coach version is missing');
+assert((sentenceSource.match(/id:'[sbiu]\d\d'/g)||[]).length>=32,'Sentence coach must include at least 32 level-aware writing tasks');
+for(const level of ['starter','basic','intermediate','upper'])assert(sentenceSource.includes(`level:'${level}'`),`Sentence coach is missing ${level} tasks`);
+assert(sentenceSource.includes('ยังไม่ถูก — แก้ตรงนี้'),'Sentence correction feedback is missing');
+assert(sentenceSource.includes('task.explain'),'Grammar explanation feedback is missing');
+assert(sentenceSource.includes('sentenceCoach'),'Sentence progress must be stored without overwriting existing progress');
+assert(!sentenceSource.includes("fetch('/api/ai'"),'Sentence coach must not call AI API');
+
 const accountSource=fs.readFileSync(path.join(root,'account-gate.js'),'utf8');
 assert(accountSource.includes("classList.add('account-locked')"),'Login gate must lock lessons before authentication');
 assert(accountSource.includes("if(!d.authenticated){overlay(d);return}"),'Unauthenticated learners must see login only');
@@ -79,9 +88,19 @@ assert(accountSource.includes('unlockApp();decorate();watch()'),'Lessons must un
 const indexSource=fs.readFileSync(path.join(root,'index.html'),'utf8');
 assert(indexSource.includes("document.documentElement.classList.add('account-locked')"),'Index must hide lessons before scripts render');
 assert(indexSource.includes('learner-level.js?v=50'),'Learner level asset is not loaded');
+assert(indexSource.includes('sentence-coach.js?v=51'),'Sentence coach asset is not loaded');
+assert(indexSource.includes('sentence-coach.css?v=51'),'Sentence coach stylesheet is not loaded');
 assert(indexSource.includes('core3000-study.js?v=50'),'Level-aware daily study cache version is stale');
 assert(indexSource.includes('oxford3000-practice.js?v=50'),'Level-aware quiz cache version is stale');
 assert(indexSource.includes('oxford3000-story-upgrade.js?v=49'),'Story upgrade asset is not loaded');
 assert(indexSource.includes('account-gate.js?v=49'),'Login gate cache version is stale');
+for(const removed of ['ai-mission-core-v33.js','ai-status.js','ai-output-safety.js'])assert(!indexSource.includes(removed),`AI learning asset must not be loaded: ${removed}`);
+assert(indexSource.includes('LOCAL · Sentence Coach'),'Local sentence mode badge is missing');
+assert(indexSource.includes('>แต่งประโยค</span>'),'Bottom navigation must use Sentence Coach instead of AI Coach');
 
-console.log(JSON.stringify({ok:true,rows:rows.length,thaiTranslations:rows.length-missingThai.length,examples:rows.length-missingExample.length,thaiExamples:rows.length-missingExampleThai.length,syntaxFiles:jsFiles.length,stories:chapters.length,wordsPerStory:WORDS_PER_STORY,extendedStories:10,extraSentencesPerExtendedStory:10,loginRequired:true,learnerLevels:4,progressPreserved:true,levelAwareOxford:true,narration:true,narrationSpeeds:['slow','medium','fast']},null,2));
+const swSource=fs.readFileSync(path.join(root,'sw.js'),'utf8');
+assert(swSource.includes("const CACHE='my-english-v51'"),'Service worker cache must be v51');
+assert(swSource.includes('./sentence-coach.js?v=51'),'Sentence coach must be available offline');
+assert(swSource.includes('./sentence-coach.css?v=51'),'Sentence coach stylesheet must be available offline');
+
+console.log(JSON.stringify({ok:true,rows:rows.length,thaiTranslations:rows.length-missingThai.length,examples:rows.length-missingExample.length,thaiExamples:rows.length-missingExampleThai.length,syntaxFiles:jsFiles.length,stories:chapters.length,wordsPerStory:WORDS_PER_STORY,extendedStories:10,extraSentencesPerExtendedStory:10,loginRequired:true,learnerLevels:4,progressPreserved:true,levelAwareOxford:true,aiLearningUI:false,sentenceCoach:true,sentenceTasks:32,localSentenceCorrection:true,narration:true,narrationSpeeds:['slow','medium','fast']},null,2));

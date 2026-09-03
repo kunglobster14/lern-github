@@ -10,3 +10,4 @@ The app remains $0-first and uses Groq free only for online AI, with Local Coach
 
 Deployment retry: latest main including the account-sync performance hotfix.
 Deployment retry: v53 210-day curriculum and level-aware learning system.
+Deployment retry: v53 second retry requested by user.

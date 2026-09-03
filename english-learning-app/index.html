@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#07111f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="description" content="My English Coach - หลักสูตรอังกฤษปรับตามระดับ พร้อม Oxford 3000, เกมตาม CEFR และ Sentence Coach แบบ Local">
+  <meta name="description" content="My English Coach - หลักสูตรอังกฤษปรับตามระดับ พร้อม Oxford 3000 และเกมตาม CEFR">
   <script>document.documentElement.classList.add('account-locked')</script>
   <link rel="manifest" href="manifest.webmanifest?v=46">
   <title>My English Coach</title>
@@ -27,12 +27,14 @@
 <body>
   <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
   <div class="app-shell">
-    <header class="topbar"><div class="brand-wrap"><div class="brand-mark">M</div><div><div class="eyebrow">MY ENGLISH</div><div class="brand-title">English Coach</div></div></div><div class="top-actions"><span id="freeModeBadge" class="free-badge" data-mode="local">LOCAL · Sentence Coach</span><button id="profileBtn" class="icon-btn profile-btn" type="button" aria-label="โปรไฟล์"><span>👤</span><b id="profileName">ผู้เรียน</b></button></div></header>
+    <header class="topbar"><div class="brand-wrap"><div class="brand-mark">M</div><div><div class="eyebrow">MY ENGLISH</div><div class="brand-title">English Coach</div></div></div><div class="top-actions"><span id="freeModeBadge" class="free-badge" data-mode="local">LOCAL · English Practice</span><button id="profileBtn" class="icon-btn profile-btn" type="button" aria-label="โปรไฟล์"><span>👤</span><b id="profileName">ผู้เรียน</b></button></div></header>
     <main id="app" aria-live="polite"></main>
-    <nav class="bottom-nav" aria-label="เมนูหลัก"><button class="nav-btn active" data-view="home" type="button"><span class="nav-ico">⌂</span><span>หน้าแรก</span></button><button class="nav-btn" data-view="learn" type="button"><span class="nav-ico">Aa</span><span>คำศัพท์</span></button><button class="nav-btn nav-ai" data-view="ai" type="button" aria-label="Sentence Coach"><span class="nav-ai-orb">✍</span><span>แต่งประโยค</span></button><button class="nav-btn" data-view="review" type="button"><span class="nav-ico">↻</span><span>ทบทวน</span></button><button class="nav-btn" data-view="progress" type="button"><span class="nav-ico">◫</span><span>สถิติ</span></button></nav>
+    <nav class="bottom-nav" aria-label="เมนูหลัก"><button class="nav-btn active" data-view="home" type="button"><span class="nav-ico">⌂</span><span>หน้าแรก</span></button><button class="nav-btn" data-view="learn" type="button"><span class="nav-ico">Aa</span><span>คำศัพท์</span></button><button class="nav-btn nav-ai" data-view="ai" type="button"><span class="nav-ai-orb">✍</span><span>แต่งประโยค</span></button><button class="nav-btn" data-view="review" type="button"><span class="nav-ico">↻</span><span>ทบทวน</span></button><button class="nav-btn" data-view="progress" type="button"><span class="nav-ico">◫</span><span>สถิติ</span></button></nav>
   </div>
-  <dialog id="profileDialog"><form method="dialog" id="profileForm" class="dialog-card"><div class="dialog-handle"></div><div class="mini-orb">👋</div><h2>ผู้เรียนและข้อมูลของฉัน</h2><p>ข้อมูลหลักเก็บอยู่ในอุปกรณ์นี้ก่อน จึงใช้งานได้โดยไม่เสียค่าฐานข้อมูล</p><div class="local-tools"><span class="tool-label">โปรไฟล์บนอุปกรณ์นี้</span><div class="profile-switch"><select id="profileSelect" aria-label="เลือกโปรไฟล์ผู้เรียน"></select><button id="addProfileBtn" class="mini-btn" type="button">+ เพิ่ม</button></div></div><label for="nameInput">ชื่อเล่นของโปรไฟล์นี้</label><input id="nameInput" maxlength="30" autocomplete="nickname" placeholder="เช่น กุ้ง"><div class="utility-grid"><button id="exportBackupBtn" class="utility-btn" type="button">⬇ สำรองข้อมูล</button><button id="importBackupBtn" class="utility-btn" type="button">⬆ นำเข้าข้อมูล</button><button id="installAppBtn" class="utility-btn" type="button">📱 ติดตั้งแอป</button></div><input id="backupFileInput" type="file" accept="application/json,.json" hidden><p class="zero-cost-note">LOCAL MODE: แบบฝึกแต่งประโยคและตรวจคำตอบทำงานในแอป ไม่เรียก AI หรือ Groq และไม่ใช้โควตาบริการภายนอก</p><div class="dialog-actions"><button value="cancel" class="secondary-btn">ปิด</button><button value="default" class="primary-btn">บันทึกชื่อ</button></div></form></dialog>
+  <dialog id="profileDialog"><form method="dialog" id="profileForm" class="dialog-card"><div class="dialog-handle"></div><div class="mini-orb">👋</div><h2>ผู้เรียนและข้อมูลของฉัน</h2><p>ข้อมูลหลักเก็บอยู่ในอุปกรณ์นี้ก่อน จึงใช้งานได้โดยไม่เสียค่าฐานข้อมูล</p><div class="local-tools"><span class="tool-label">โปรไฟล์บนอุปกรณ์นี้</span><div class="profile-switch"><select id="profileSelect" aria-label="เลือกโปรไฟล์ผู้เรียน"></select><button id="addProfileBtn" class="mini-btn" type="button">+ เพิ่ม</button></div></div><label for="nameInput">ชื่อเล่นของโปรไฟล์นี้</label><input id="nameInput" maxlength="30" autocomplete="nickname" placeholder="เช่น กุ้ง"><div class="utility-grid"><button id="exportBackupBtn" class="utility-btn" type="button">⬇ สำรองข้อมูล</button><button id="importBackupBtn" class="utility-btn" type="button">⬆ นำเข้าข้อมูล</button><button id="installAppBtn" class="utility-btn" type="button">📱 ติดตั้งแอป</button></div><input id="backupFileInput" type="file" accept="application/json,.json" hidden><p class="zero-cost-note">LOCAL MODE: แบบฝึกหลักทำงานในแอปโดยไม่ใช้โควตาบริการภายนอก</p><div class="dialog-actions"><button value="cancel" class="secondary-btn">ปิด</button><button value="default" class="primary-btn">บันทึกชื่อ</button></div></form></dialog>
   <script src="app.js?v=33"></script>
+  <script src="account-gate.js?v=49"></script>
+  <script src="account-admin.js?v=33"></script>
   <script src="learner-level.js?v=50"></script>
   <script src="enhancements.js?v=33"></script>
   <script src="content-pack.js?v=33"></script>
@@ -42,8 +44,6 @@
   <script src="builder-feedback-v36.js?v=36"></script>
   <script src="learning-path.js?v=33"></script>
   <script src="learning-guide.js?v=52"></script>
-  <script src="sentence-coach.js?v=51"></script>
-  <script src="adaptive-learning-v52.js?v=52"></script>
 
   <script src="oxford3000-pack-01.js?v=46"></script>
   <script src="oxford3000-pack-02.js?v=46"></script>
@@ -67,7 +67,5 @@
   <script src="learning-ui-v37.js?v=37"></script>
   <script src="complete-course.js?v=33"></script>
   <script src="vocab-unify.js?v=33"></script>
-  <script src="account-gate.js?v=49"></script>
-  <script src="account-admin.js?v=33"></script>
 </body>
 </html>

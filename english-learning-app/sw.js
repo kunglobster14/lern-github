@@ -1,4 +1,4 @@
-const CACHE='my-english-v60';
+const CACHE='my-english-v59';
 const ASSETS=[
   './','./index.html','./styles.css?v=33','./enhancements.css?v=33','./game-lab-v31.css?v=33','./learning-path.css?v=33','./learning-guide.css?v=33','./core3000-plan.css?v=46','./core3000-study.css?v=46','./core3000-library.css?v=46','./oxford3000-extra.css?v=46','./oxford3000-story-v46.css?v=46','./account-gate.css?v=53',
   './app.js?v=33','./account-gate.js?v=53','./account-admin.js?v=33','./learner-level-v53.js?v=53','./enhancements.js?v=33','./content-pack.js?v=33','./game-lab-v31.js?v=33','./spell-feedback-v34.js?v=34','./translate-audio-v35.js?v=35','./builder-feedback-v36.js?v=36','./learning-path.js?v=33','./learning-guide.js?v=52',

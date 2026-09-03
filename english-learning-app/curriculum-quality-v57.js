@@ -14,8 +14,7 @@
   }
   function relatedRows(base,allowed){
     const terms=uniqBy((base.vocab||[]).map(v=>norm(v.en)).filter(Boolean),x=>x);
-    const related=allowed.filter(r=>{const word=norm(r.word),example=` ${norm(r.example)} `;return terms.includes(word)||terms.some(t=>t.length>2&&example.includes(` ${t} `))});
-    return related.length>=8?related:allowed;
+    return allowed.filter(r=>{const word=norm(r.word),example=` ${norm(r.example)} `;return terms.includes(word)||terms.some(t=>t.length>2&&example.includes(` ${t} `))});
   }
   function takeWindow(pool,seed,count){
     if(!pool.length)return[];
@@ -26,21 +25,20 @@
   }
   function decorate(base){
     if(!base||base.contentVersion===VERSION)return base;
-    const allowed=allowedRows(base),related=relatedRows(base,allowed);
-    const focus=allowed.length?[...allowed].sort((a,b)=>(Number(a.id)||0)-(Number(b.id)||0))[(Number(base.day)-1)%allowed.length]:null;
-    const extra=takeWindow(related,Number(base.day)*97+31,5);
+    const allowed=allowedRows(base),related=relatedRows(base,allowed),extra=takeWindow(related,Number(base.day)*97+31,5);
     const baseVocab=(base.vocab||[]).map(v=>({en:v.en,th:v.th,source:'course'}));
+    const focusWord=baseVocab[0]||{en:'practice',th:'ฝึก',source:'course'};
     const mixed=uniqBy([
-      ...baseVocab.slice(0,3),
-      ...(focus?[{en:focus.word,th:focus.th,source:'oxford',oxfordId:focus.id}]:[]),
-      ...extra.map(r=>({en:r.word,th:r.th,source:'oxford',oxfordId:r.id})),
-      ...baseVocab.slice(3)
+      ...baseVocab.slice(0,4),
+      ...extra.map(r=>({en:r.word,th:r.th,source:'oxford-related',oxfordId:r.id})),
+      ...baseVocab.slice(4)
     ],v=>norm(v.en)).slice(0,6);
-    const focusWord=mixed[3]||mixed[0]||{en:'practice',th:'ฝึก'};
+    const typeIndex=(Number(base.day)-1)%7,extraExamples=extra.map(r=>r.example).filter(Boolean);
+    const primary=typeIndex<2?base.example:(extraExamples[0]||base.example);
     const examplePool=uniqBy([
+      primary,
+      ...extraExamples,
       base.example,
-      ...(focus?[focus.example]:[]),
-      ...extra.map(r=>r.example),
       ...(base.examples||[])
     ].filter(Boolean),x=>norm(x));
     const examples=examplePool.slice(0,4);

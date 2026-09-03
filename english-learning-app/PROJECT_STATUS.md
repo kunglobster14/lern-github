@@ -18,3 +18,4 @@ Deployment retry: v55 + v56 user-requested retry after build-rate-limit (second 
 Deployment retry: v55 + v56 user-requested retry after build-rate-limit (third attempt).
 Deployment retry: v59 + v60 curriculum variety, coherent Mini Response, and Oxford sentence-game pool fixes.
 Deployment retry: v61 separate learner login/profile isolation.
+Deployment retry: 2026-09-04 01:02 Asia/Bangkok — deployment-only retrigger; no runtime or data changes.

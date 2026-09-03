@@ -1,9 +1,11 @@
 (()=>{
   const TARGET=3000,DATASET_VERSION='oxford3000-v43';
-  const esc=v=>typeof window.oxfordEsc==='function'?window.oxfordEsc(v):String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const esc=v=>typeof window.oxfordEsc==='function'?window.oxfordEsc(v):String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[ch]));
   const say=v=>typeof window.oxfordSpeak==='function'?window.oxfordSpeak(v):(()=>{try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(v||''));u.lang='en-US';u.rate=.86;speechSynthesis.speak(u)}catch{}})();
   const reading=v=>typeof window.oxfordThaiReading==='function'?window.oxfordThaiReading(v):String(v||'');
   const shuffle=a=>typeof window.oxfordShuffle==='function'?window.oxfordShuffle(a):[...a].sort(()=>Math.random()-.5);
+  const levelInfo=()=>typeof window.getLearnerLevelInfo==='function'?window.getLearnerLevelInfo():null;
+  const levelList=list=>typeof window.filterOxfordByLearnerLevel==='function'?window.filterOxfordByLearnerLevel(list):list;
   const plan=()=>{state.core3000Plan=state.core3000Plan||{daily:12,daysPerWeek:6,mastered:0,startedAt:new Date().toISOString()};return state.core3000Plan};
   const dayKey=()=>new Date().toISOString().slice(0,10);
   function migrate(p,list){
@@ -24,17 +26,21 @@
   function modal(body){
     document.querySelector('#core3000StudyModal')?.remove();
     const wrap=document.createElement('div');wrap.id='core3000StudyModal';wrap.className='game-lab-overlay';
-    wrap.innerHTML=`<section class="game-panel core-study-panel"><div class="game-panel-head"><h2>📚 Oxford 3000 · ชุดสุ่มวันนี้</h2><button class="game-close" type="button">×</button></div><div id="coreStudyBody">${body}</div></section>`;
+    const li=levelInfo();
+    wrap.innerHTML=`<section class="game-panel core-study-panel"><div class="game-panel-head"><h2>📚 Oxford 3000 · ชุดสุ่มวันนี้${li?` · ${esc(li.cefr)}`:''}</h2><button class="game-close" type="button">×</button></div><div id="coreStudyBody">${body}</div></section>`;
     document.body.appendChild(wrap);wrap.querySelector('.game-close').onclick=()=>wrap.remove();return wrap;
   }
   async function openStudy(){
-    const root=modal(`<div class="core-study-loading"><div class="listen-orb">Aa</div><h3>กำลังสุ่ม ${plan().daily} คำจาก Oxford 3000...</h3><p>คำที่ผ่านแล้วจะไม่ถูกสุ่มเป็นคำใหม่ซ้ำ</p></div>`);
+    const li=levelInfo();
+    const root=modal(`<div class="core-study-loading"><div class="listen-orb">Aa</div><h3>กำลังสุ่ม ${plan().daily} คำ${li?` ระดับ ${esc(li.cefr)}`:' จาก Oxford 3000'}...</h3><p>คำที่ผ่านแล้วจะไม่ถูกสุ่มเป็นคำใหม่ซ้ำ</p></div>`);
     try{
       if(typeof window.ensureOxford3000==='function')await window.ensureOxford3000();
       const list=typeof window.getOxford3000==='function'?window.getOxford3000():[];if(list.length<TARGET)throw new Error(`oxford_not_ready_${list.length}`);
       const p=plan();migrate(p,list);const daily=Math.max(1,Math.min(20,Number(p.daily)||12));
       if((p.masteredWords||[]).length>=TARGET){root.querySelector('#coreStudyBody').innerHTML=`<div class="core-study-finish"><div class="core-finish-icon">🏆</div><h2>Oxford 3000 ครบแล้ว</h2><p>คุณผ่านคำศัพท์ครบ 3,000 คำแล้ว</p><button class="primary-btn" id="coreDone">ปิด</button></div>`;root.querySelector('#coreDone').onclick=()=>root.remove();return}
-      const cards=chooseToday(list,p,daily);if(!cards.length)throw new Error('no_words_available');runSession(root,cards);
+      const pool=levelList(list),mastered=new Set(p.masteredWords||[]),remaining=pool.filter(e=>!mastered.has(e.word));
+      if(!remaining.length){root.querySelector('#coreStudyBody').innerHTML=`<div class="core-study-finish"><div class="core-finish-icon">✅</div><h2>คำศัพท์ระดับ ${esc(li?.cefr||'ที่เลือก')} ฝึกครบแล้ว</h2><p>ความคืบหน้า Oxford 3000 รวมยังคง ${p.mastered}/${TARGET} คำ และไม่ได้ถูกรีเซ็ต</p><div class="core-finish-routine">เปลี่ยนระดับผู้เรียนจากปุ่มระดับด้านบนเพื่อเรียนชุดถัดไปได้</div><button class="primary-btn" id="coreDone">ปิด</button></div>`;root.querySelector('#coreDone').onclick=()=>root.remove();return}
+      const cards=chooseToday(pool,p,daily);if(!cards.length)throw new Error('no_words_available');runSession(root,cards);
     }catch(err){root.querySelector('#coreStudyBody').innerHTML=`<div class="core-study-error"><h3>เปิดชุดคำศัพท์ไม่ได้</h3><p>Oxford 3000 ยังโหลดไม่ครบ กรุณารีเฟรชหน้าแล้วลองใหม่</p><small>${esc(err?.message||'unknown')}</small><br><br><button class="primary-btn" id="coreRetry">ลองใหม่</button></div>`;root.querySelector('#coreRetry').onclick=()=>openStudy()}
   }
   function runSession(root,cards){
@@ -49,7 +55,7 @@
       root.querySelector('#corePass').onclick=()=>{if(!ready)return;passed.add(c.word);if(!state.known.includes(c.word))state.known.push(c.word);state.weak=state.weak.filter(w=>w!==c.word);saveState();idx++;draw()};
       root.querySelector('#coreAgain').onclick=()=>{if(!state.weak.includes(c.word))state.weak.push(c.word);saveState();idx=(idx+1)%cards.length;draw()};
     };
-    const finish=()=>{const p=plan();const set=new Set(p.masteredWords||[]);cards.forEach(c=>set.add(c.word));p.masteredWords=[...set];p.mastered=Math.min(TARGET,set.size);p.lastCompletedAt=new Date().toISOString();p.todayWords=[];saveState();root.querySelector('#coreStudyBody').innerHTML=`<div class="core-study-finish"><div class="core-finish-icon">🏆</div><h2>ผ่านชุดสุ่มวันนี้แล้ว</h2><p>ผ่าน ${cards.length} คำ · รวม ${p.mastered}/${TARGET} คำ</p><div class="core-finish-routine">ครั้งต่อไปจะสุ่มจากคำที่ยังไม่ผ่าน และคำเก่ายังใช้ในบททบทวนได้</div><button class="primary-btn" id="coreDone">กลับหน้าแรก</button></div>`;root.querySelector('#coreDone').onclick=()=>{root.remove();go('home')}};draw();
+    const finish=()=>{const p=plan();const set=new Set(p.masteredWords||[]);cards.forEach(c=>set.add(c.word));p.masteredWords=[...set];p.mastered=Math.min(TARGET,set.size);p.lastCompletedAt=new Date().toISOString();p.todayWords=[];saveState();const li=levelInfo();root.querySelector('#coreStudyBody').innerHTML=`<div class="core-study-finish"><div class="core-finish-icon">🏆</div><h2>ผ่านชุดสุ่มวันนี้แล้ว</h2><p>ผ่าน ${cards.length} คำ${li?` · ${esc(li.cefr)}`:''} · รวม ${p.mastered}/${TARGET} คำ</p><div class="core-finish-routine">ครั้งต่อไปจะสุ่มจากคำที่ยังไม่ผ่านในระดับที่เลือก และคำเก่ายังใช้ในบททบทวนได้</div><button class="primary-btn" id="coreDone">กลับหน้าแรก</button></div>`;root.querySelector('#coreDone').onclick=()=>{root.remove();go('home')}};draw();
   }
   window.openCore3000Study=openStudy;
 })();

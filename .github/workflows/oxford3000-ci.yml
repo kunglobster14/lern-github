@@ -25,3 +25,5 @@ jobs:
         run: node scripts/test-oxford3000.mjs
       - name: Audit 210 lesson uniqueness and Quick Check answers
         run: node scripts/test-course-v57.mjs
+      - name: Validate Thai lesson terminology
+        run: node scripts/test-terminology-v58.mjs

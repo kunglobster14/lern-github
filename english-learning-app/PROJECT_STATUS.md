@@ -12,3 +12,4 @@ Deployment retry: latest main including the account-sync performance hotfix.
 Deployment retry: v53 210-day curriculum and level-aware learning system.
 Deployment retry: v53 second retry requested by user.
 Deployment retry: v54 continuous games and Sentence Coach flow.
+Deployment retry: v54 user-requested retry after build-rate-limit.

@@ -1,6 +1,6 @@
 (()=>{
   const STORAGE_KEY='oxfordStoryNarrationSpeedV1';
-  const SPEEDS={slow:{label:'ช้า',rate:.75},medium:{label:'กลาง',rate:.9},fast:{label:'เร็ว',rate:1.15}};
+  const SPEEDS={slow:{label:'ช้า',rate:.6},medium:{label:'กลาง',rate:.9},fast:{label:'เร็ว',rate:1.15}};
   let speedName='medium';
   try{const saved=localStorage.getItem(STORAGE_KEY);if(saved&&SPEEDS[saved])speedName=saved}catch{}
   let player={root:null,sentences:[],index:0,active:false,paused:false,utterance:null};

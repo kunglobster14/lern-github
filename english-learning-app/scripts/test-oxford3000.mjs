@@ -19,7 +19,7 @@ assert.equal(rows.filter(r=>!String(get(r,'example',5)||r?.sentence||'').trim())
 assert.equal(rows.filter(r=>!/[ก-๙]/.test(String(get(r,'exampleThai',6)||r?.example_thai||r?.sentenceThai||''))).length,0,'Thai examples missing');
 assert.equal(new Set(rows.map((r,i)=>get(r,'id',0)??i+1)).size,3000,'Oxford IDs must be unique');
 
-const jsFiles=['learner-level-v53.js','daily-course-v53.js','sentence-coach-v54.js','adaptive-games-v54.js','learning-ui-v54.js','learning-guide.js','oxford3000-loader.js','oxford3000-core.js','core3000-study.js','core3000-library.js','oxford3000-practice.js','oxford3000-stories.js','oxford3000-story-upgrade.js','oxford3000-story-speed.js','core3000-plan.js','account-gate.js'];
+const jsFiles=['learner-level-v53.js','daily-course-v53.js','sentence-coach-v55.js','adaptive-games-v54.js','learning-experience-v55.js','learning-guide.js','oxford3000-loader.js','oxford3000-core.js','core3000-study.js','core3000-library.js','oxford3000-practice.js','oxford3000-stories.js','oxford3000-story-upgrade.js','oxford3000-story-speed.js','core3000-plan.js','account-gate.js'];
 for(const file of jsFiles){const check=spawnSync(process.execPath,['--check',path.join(root,file)],{encoding:'utf8'});assert.equal(check.status,0,`${file} syntax error:\n${check.stderr||check.stdout}`)}
 
 const storySource=readFile('oxford3000-stories.js');
@@ -42,17 +42,17 @@ for(const range of ["{id:'L0',from:1,to:21","{id:'L1',from:22,to:56","{id:'L2',f
 assert(dailySource.includes('const WEEKS=['),'Weekly curriculum missing');
 assert.equal((dailySource.match(/^    \['L[0-5]'/gm)||[]).length,30,'Course must define 30 teaching weeks');
 assert(dailySource.includes('unlockedThrough'),'Course must unlock the next lesson sequentially');
-assert(dailySource.includes('25 บท L0–L5 เดิมยังเก็บไว้เป็น Milestone'),'Legacy 25-lesson progress preservation message missing');
 assert(dailySource.includes('Oxford 3000 และเรื่องสั้น 25 เรื่องยังเข้าได้ตามปกติ'),'Oxford/stories continuity message missing');
 assert(!dailySource.includes('MutationObserver'),'Daily course must not use continuous DOM observers');
 
-const sentenceSource=readFile('sentence-coach-v54.js');
+const sentenceSource=readFile('sentence-coach-v55.js');
 for(const level of ['starter','basic','intermediate','upper'])assert(sentenceSource.includes(`${level}:[`),`Sentence Coach missing ${level} bank`);
 assert(sentenceSource.includes('window.getDailyLesson'),'Sentence Coach must use current lesson content');
+assert(sentenceSource.includes('width:100vw;height:100dvh'),'Sentence Coach must fill the viewport');
 assert(sentenceSource.includes('say(answer)'),'Correct Sentence Coach answer must be spoken');
-assert(sentenceSource.includes('renderTask(d,pickTask())'),'Correct answer must advance to another sentence');
-assert(sentenceSource.includes("window.__gameLabV31?.addProgress?.('ai',1)"),'Sentence Coach mission must preserve legacy quest progress');
-assert(sentenceSource.includes('[data-game="mission"]'),'Former AI mission must route to Sentence Coach');
+assert(sentenceSource.includes('setTimeout(next,1800)'),'Correct answer must advance automatically');
+assert(sentenceSource.includes("window.__gameLabV31?.addProgress?.('ai',1)"),'Sentence Coach must preserve legacy mission progress');
+assert(sentenceSource.includes('[data-game="mission"]'),'Former mission must route to Sentence Coach');
 assert(!sentenceSource.includes("fetch('/api/ai'"),'Sentence Coach must remain local-only');
 assert(!sentenceSource.includes('MutationObserver'),'Sentence Coach must not use continuous DOM observers');
 
@@ -67,13 +67,17 @@ assert(gamesSource.includes("next(d,'dialog'"),'Survival Dialog must continue au
 assert(gamesSource.includes('SENTENCE COACH Surprise Mission'),'Mission UI must no longer say AI');
 assert(!gamesSource.includes('MutationObserver'),'Adaptive games must not use continuous DOM observers');
 
-const uiSource=readFile('learning-ui-v54.js');
-for(const title of ['เส้นทางจากพื้นฐาน → สนทนาได้','เส้นทางชีวิตประจำวัน → สนทนาได้คล่องขึ้น','เส้นทาง A2–B1 → สนทนาต่อเนื่อง','เส้นทาง B1–B2 → สื่อสารระดับกลางสูง'])assert(uiSource.includes(title),`Missing level route title ${title}`);
-assert(uiSource.includes("replace(/\\bDay\\b/g,'บทเรียน')"),'Visible Day terminology must change to บทเรียน');
-assert(uiSource.includes('เส้นทางเรียนบทที่ ${cfg.start}–210'),'Level summary must use lesson range wording');
-assert(uiSource.includes("path:['L2','L3','L4','L5']"),'A2-B1 roadmap must visibly differ');
-assert(uiSource.includes("path:['L4','L5']"),'B1-B2 roadmap must visibly differ');
-assert(!uiSource.includes('MutationObserver'),'UI patch must not add continuous DOM observers');
+const experienceSource=readFile('learning-experience-v55.js');
+for(const activity of ['ฟังแล้วพูดตาม','Pattern Lab · เรียงประโยค','คำศัพท์ในบริบท + Quick Check','Mini Dialogue · เลือกคำตอบที่ใช้จริง'])assert(experienceSource.includes(activity),`Interactive lesson missing ${activity}`);
+assert(experienceSource.includes('พร้อมผ่านบทเมื่อทำอย่างน้อย 3/4 กิจกรรมหลัก'),'Lesson must require meaningful activity before completion');
+assert(experienceSource.includes('window.openSentenceCoach'),'Lesson must connect to Sentence Coach');
+assert(experienceSource.includes("window.openAdaptiveGame?.('mix')"),'Lesson must connect to games');
+assert(experienceSource.includes('SKILL ROADMAP · ปรับตามระดับ'),'Dynamic skill roadmap missing');
+assert(experienceSource.includes("legacy.style.display='none'"),'Static legacy milestone UI must be hidden, not deleted');
+assert(experienceSource.includes('stageSamples'),'Skill roadmap must draw knowledge from real course lessons');
+assert(experienceSource.includes("intermediate:['L2','L3','L4','L5']"),'A2-B1 skill route must differ');
+assert(experienceSource.includes("upper:['L4','L5']"),'B1-B2 skill route must differ');
+assert(!experienceSource.includes('MutationObserver'),'Learning experience must not add continuous DOM observers');
 
 const studySource=readFile('core3000-study.js'),quizSource=readFile('oxford3000-practice.js');
 assert(studySource.includes('filterOxfordByLearnerLevel'),'Oxford daily study must respect learner level');
@@ -84,14 +88,14 @@ assert(accountSource.includes("classList.add('account-locked')"),'Login gate mus
 assert(accountSource.includes("if(!d.authenticated){overlay(d);return}"),'Unauthenticated learners must see login only');
 
 const indexSource=readFile('index.html');
-for(const asset of ['learner-level-v53.js?v=53','daily-course-v53.js?v=53','sentence-coach-v54.js?v=54','adaptive-games-v54.js?v=54','learning-ui-v54.js?v=54','account-gate.js?v=53'])assert(indexSource.includes(asset),`Index missing ${asset}`);
-for(const old of ['sentence-coach-v53.js?v=53','adaptive-games-v53.js?v=53','complete-course.js','complete-course.css'])assert(!indexSource.includes(old),`Obsolete/unused UI still loaded: ${old}`);
+for(const asset of ['learner-level-v53.js?v=53','daily-course-v53.js?v=53','sentence-coach-v55.js?v=55','adaptive-games-v54.js?v=54','learning-experience-v55.js?v=55','account-gate.js?v=53'])assert(indexSource.includes(asset),`Index missing ${asset}`);
+for(const old of ['sentence-coach-v54.js?v=54','learning-ui-v54.js?v=54','sentence-coach-v53.js?v=53','adaptive-games-v53.js?v=53','complete-course.js','complete-course.css'])assert(!indexSource.includes(old),`Obsolete/unused UI still loaded: ${old}`);
 assert(indexSource.includes('>SENTENCE COACH</span>'),'Bottom nav must use SENTENCE COACH wording');
 assert(indexSource.includes('210 บทเรียน'),'Index must use lesson terminology');
 
 const swSource=readFile('sw.js');
-assert(swSource.includes("const CACHE='my-english-v54'"),'Service worker cache must be v54');
-for(const asset of ['./daily-course-v53.js?v=53','./sentence-coach-v54.js?v=54','./adaptive-games-v54.js?v=54','./learning-ui-v54.js?v=54'])assert(swSource.includes(asset),`Service worker missing ${asset}`);
-for(const removed of ['./sentence-coach-v53.js?v=53','./adaptive-games-v53.js?v=53','./complete-course.js?v=33','./complete-course.css?v=33'])assert(!swSource.includes(removed),`Service worker still caches removed asset ${removed}`);
+assert(swSource.includes("const CACHE='my-english-v55'"),'Service worker cache must be v55');
+for(const asset of ['./daily-course-v53.js?v=53','./sentence-coach-v55.js?v=55','./adaptive-games-v54.js?v=54','./learning-experience-v55.js?v=55'])assert(swSource.includes(asset),`Service worker missing ${asset}`);
+for(const removed of ['./sentence-coach-v54.js?v=54','./learning-ui-v54.js?v=54','./sentence-coach-v53.js?v=53','./complete-course.js?v=33','./complete-course.css?v=33'])assert(!swSource.includes(removed),`Service worker still caches removed asset ${removed}`);
 
-console.log(JSON.stringify({ok:true,rows:3000,stories:25,learnerLevels:4,courseLessons:210,weeks:30,levelStartLessons:{starter:1,basic:22,intermediate:71,upper:141},legacyProgressPreserved:true,levelAwareOxford:true,endlessRandomGames:true,continuousSentenceCoach:true,spokenCorrectAnswers:true,aiUiReplacedBySentenceCoach:true,completeCourseUiRemoved:true,lessonTerminology:true,noContinuousObservers:true},null,2));
+console.log(JSON.stringify({ok:true,rows:3000,stories:25,learnerLevels:4,courseLessons:210,weeks:30,levelStartLessons:{starter:1,basic:22,intermediate:71,upper:141},legacyProgressPreserved:true,levelAwareOxford:true,endlessRandomGames:true,fullScreenSentenceCoach:true,continuousSentenceCoach:true,spokenCorrectAnswers:true,interactiveLessonActivities:4,dynamicSkillRoadmap:true,staticMilestoneHidden:true,lessonTerminology:true,noContinuousObservers:true},null,2));

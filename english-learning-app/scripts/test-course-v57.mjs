@@ -47,6 +47,8 @@ assert.notEqual(JSON.stringify(d71.vocab.map(v=>v.en)),JSON.stringify(d72.vocab.
 assert.equal(d71.contentVersion,'v57');
 assert.equal(d72.contentVersion,'v57');
 for(let day=1;day<=210;day++){
+  const lesson=sandbox.getDailyLesson(day);
+  assert.equal(lesson.focusWord?.source,'course',`Lesson ${day} focus must come from its course theme, not an unrelated Oxford fallback`);
   const q=sandbox.getQuickCheckSpecV57(day);assert(q,`Missing Quick Check spec for lesson ${day}`);
   assert(q.choices.some(c=>String(c.en).toLowerCase()===String(q.quizWord.en).toLowerCase()),`Correct Quick Check choice missing in lesson ${day}`);
   assert(new Set(q.choices.map(c=>String(c.th))).size===q.choices.length,`Duplicate Quick Check labels in lesson ${day}`);

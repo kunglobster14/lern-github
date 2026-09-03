@@ -38,12 +38,12 @@ assert.equal(typeof sandbox.auditDailyCourseV57,'function');
 const audit=sandbox.auditDailyCourseV57();
 assert.equal(audit.totalLessons,210);
 assert.equal(audit.distinctCoreSignatures,210,'All 210 lessons must have distinct learning-content signatures');
-assert.deepEqual(audit.duplicatePairs,[],'No duplicate learning-content lesson pairs allowed');
+assert.equal(audit.duplicatePairs.length,0,'No duplicate learning-content lesson pairs allowed');
 assert.equal(audit.quickChecksWithCorrectChoice,210,'Every Quick Check must include its correct answer');
 
 const d71=sandbox.getDailyLesson(71),d72=sandbox.getDailyLesson(72);
 assert.notEqual(d71.examples[0],d72.examples[0],'Lessons 71 and 72 must start with different example sentences');
-assert.notDeepEqual(d71.vocab.map(v=>v.en),d72.vocab.map(v=>v.en),'Lessons 71 and 72 must not reuse the same vocabulary set');
+assert.notEqual(JSON.stringify(d71.vocab.map(v=>v.en)),JSON.stringify(d72.vocab.map(v=>v.en)),'Lessons 71 and 72 must not reuse the same vocabulary set');
 assert.equal(d71.contentVersion,'v57');
 assert.equal(d72.contentVersion,'v57');
 for(let day=1;day<=210;day++){

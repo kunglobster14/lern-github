@@ -27,5 +27,7 @@ jobs:
         run: node scripts/test-course-v57.mjs
       - name: Validate Thai lesson terminology
         run: node scripts/test-terminology-v58.mjs
-      - name: Audit v59 lesson variety and sentence game pools
+      - name: Audit v59 sentence game pools
         run: node scripts/test-v59.mjs
+      - name: Audit v60 curriculum variety
+        run: node scripts/test-v60.mjs

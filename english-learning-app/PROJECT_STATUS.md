@@ -17,3 +17,4 @@ Deployment retry: v55 full-screen Sentence Coach + interactive lesson experience
 Deployment retry: v55 + v56 user-requested retry after build-rate-limit (second attempt).
 Deployment retry: v55 + v56 user-requested retry after build-rate-limit (third attempt).
 Deployment retry: v59 + v60 curriculum variety, coherent Mini Response, and Oxford sentence-game pool fixes.
+Deployment retry: v61 separate learner login/profile isolation.

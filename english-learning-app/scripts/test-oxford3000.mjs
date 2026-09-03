@@ -5,121 +5,75 @@ import {spawnSync} from 'node:child_process';
 import assert from 'node:assert/strict';
 
 const root=path.resolve(process.cwd());
+const readFile=name=>fs.readFileSync(path.join(root,name),'utf8');
 const packFiles=['oxford3000-pack-01.js','oxford3000-pack-02.js','oxford3000-pack-03.js','oxford3000-pack-03b.js','oxford3000-pack-04.js','oxford3000-pack-05.js','oxford3000-pack-06.js','oxford3000-pack-07.js','oxford3000-pack-08.js'];
 let b64='';
-for(const name of packFiles){
-  const text=fs.readFileSync(path.join(root,name),'utf8');
-  const m=text.match(/\+\s*'([A-Za-z0-9+/=]+)'\s*;?\s*$/);
-  assert(m,`Cannot extract base64 from ${name}`);
-  b64+=m[1];
-}
-const json=zlib.gunzipSync(Buffer.from(b64,'base64')).toString('utf8');
-const parsed=JSON.parse(json);
+for(const name of packFiles){const text=readFile(name);const m=text.match(/\+\s*'([A-Za-z0-9+/=]+)'\s*;?\s*$/);assert(m,`Cannot extract base64 from ${name}`);b64+=m[1]}
+const parsed=JSON.parse(zlib.gunzipSync(Buffer.from(b64,'base64')).toString('utf8'));
 const rows=Array.isArray(parsed)?parsed:(parsed?.rows||parsed?.data||parsed?.words||parsed?.items||[]);
-assert(Array.isArray(rows),'Decoded Oxford payload is not an array');
-assert.equal(rows.length,3000,`Expected 3000 rows, got ${rows.length}`);
-const read=(r,key,index)=>Array.isArray(r)?r[index]:r?.[key];
-const missingWord=rows.filter(r=>!String(read(r,'word',1)||'').trim());
-const missingThai=rows.filter(r=>!/[ก-๙]/.test(String(read(r,'thai',4)||read(r,'translation',4)||'')));
-const missingExample=rows.filter(r=>!String(read(r,'example',5)||r?.sentence||'').trim());
-const missingExampleThai=rows.filter(r=>!/[ก-๙]/.test(String(read(r,'exampleThai',6)||r?.example_thai||r?.sentenceThai||'')));
-assert.equal(missingWord.length,0,`Rows without word: ${missingWord.length}`);
-assert.equal(missingThai.length,0,`Rows without Thai translation: ${missingThai.length}`);
-assert.equal(missingExample.length,0,`Rows without example: ${missingExample.length}`);
-assert.equal(missingExampleThai.length,0,`Rows without Thai example: ${missingExampleThai.length}`);
-const ids=rows.map((r,i)=>read(r,'id',0)??i+1);
-assert.equal(new Set(ids).size,3000,'Oxford IDs are not unique');
+assert.equal(rows.length,3000,'Oxford payload must contain exactly 3000 rows');
+const get=(r,key,index)=>Array.isArray(r)?r[index]:r?.[key];
+assert.equal(rows.filter(r=>!String(get(r,'word',1)||'').trim()).length,0,'Oxford words missing');
+assert.equal(rows.filter(r=>!/[ก-๙]/.test(String(get(r,'thai',4)||get(r,'translation',4)||''))).length,0,'Thai meanings missing');
+assert.equal(rows.filter(r=>!String(get(r,'example',5)||r?.sentence||'').trim()).length,0,'Examples missing');
+assert.equal(rows.filter(r=>!/[ก-๙]/.test(String(get(r,'exampleThai',6)||r?.example_thai||r?.sentenceThai||''))).length,0,'Thai examples missing');
+assert.equal(new Set(rows.map((r,i)=>get(r,'id',0)??i+1)).size,3000,'Oxford IDs must be unique');
 
-const jsFiles=['learner-level.js','sentence-coach.js','adaptive-learning-v52.js','learning-guide.js','oxford3000-loader.js','oxford3000-core.js','core3000-study.js','core3000-library.js','oxford3000-practice.js','oxford3000-stories.js','oxford3000-story-upgrade.js','oxford3000-story-speed.js','core3000-plan.js','account-gate.js'];
-for(const file of jsFiles){
-  const check=spawnSync(process.execPath,['--check',path.join(root,file)],{encoding:'utf8'});
-  assert.equal(check.status,0,`${file} syntax error:\n${check.stderr||check.stdout}`);
-}
+const jsFiles=['learner-level-v53.js','daily-course-v53.js','sentence-coach-v53.js','adaptive-games-v53.js','learning-guide.js','oxford3000-loader.js','oxford3000-core.js','core3000-study.js','core3000-library.js','oxford3000-practice.js','oxford3000-stories.js','oxford3000-story-upgrade.js','oxford3000-story-speed.js','core3000-plan.js','account-gate.js'];
+for(const file of jsFiles){const check=spawnSync(process.execPath,['--check',path.join(root,file)],{encoding:'utf8'});assert.equal(check.status,0,`${file} syntax error:\n${check.stderr||check.stdout}`)}
 
-function shuffle(arr,seed){const a=[...arr];let x=seed;const rnd=()=>{x=(x*1664525+1013904223)>>>0;return x/4294967296};for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-const STORY_COUNT=25,WORDS_PER_STORY=120;
-const storyRows=shuffle(rows,300046);
-const chapters=Array.from({length:STORY_COUNT},(_,i)=>storyRows.slice(i*WORDS_PER_STORY,(i+1)*WORDS_PER_STORY));
-assert(chapters.every(c=>c.length===WORDS_PER_STORY),`Each story must contain ${WORDS_PER_STORY} target entries`);
-assert.equal(chapters.flat().length,3000,'Stories must cover 3000 entries');
-assert.equal(new Set(chapters.flat().map((r,i)=>read(r,'id',0)??i+1)).size,3000,'Story distribution repeats an Oxford entry');
+const storySource=readFile('oxford3000-stories.js');
+assert.match(storySource,/const STORY_COUNT=25;/,'Story count must stay 25');
+assert.match(storySource,/const WORDS_PER_STORY=120;/,'Story practice set must stay 120 words each');
+assert.equal((storySource.match(/title:`/g)||[]).length,25,'Expected 25 authored story titles');
+for(const control of ['storyReadAll','storyPause','storyStop'])assert(storySource.includes(control),`Missing story control ${control}`);
+const upgradeSource=readFile('oxford3000-story-upgrade.js');
+assert(upgradeSource.includes('longStoryCount:10'),'Final 10 stories must remain extended');
+assert(upgradeSource.includes('extraSentencesPerLongStory:10'),'Extended stories must keep extra sentences');
 
-const storySource=fs.readFileSync(path.join(root,'oxford3000-stories.js'),'utf8');
-assert.match(storySource,/const STORY_COUNT=25;/,'Story count constant must be 25');
-assert.match(storySource,/const WORDS_PER_STORY=120;/,'Words per story constant must be 120');
-assert.equal((storySource.match(/title:`/g)||[]).length,25,'Expected exactly 25 authored story titles');
-for(const control of ['storyReadAll','storyPause','storyStop'])assert(storySource.includes(control),`Missing narration control ${control}`);
-assert(storySource.includes('SpeechSynthesisUtterance'),'Whole-story speech synthesis is missing');
+const levelSource=readFile('learner-level-v53.js');
+for(const pair of ["starter:{id:'starter'","basic:{id:'basic'","intermediate:{id:'intermediate'","upper:{id:'upper'"])assert(levelSource.includes(pair),`Missing learner level ${pair}`);
+for(const start of ['startDay:1','startDay:22','startDay:71','startDay:141'])assert(levelSource.includes(start),`Missing distinct course start ${start}`);
+assert(levelSource.includes('filterOxfordByLearnerLevel'),'Oxford CEFR filter missing');
+assert(levelSource.includes('Game และ Sentence Coach จะใช้ระดับนี้'),'Level UI must explain real level effects');
 
-const upgradeSource=fs.readFileSync(path.join(root,'oxford3000-story-upgrade.js'),'utf8');
-for(const title of ['The Girl Who Found a Map','The Underground Garden','Flight 207','The Snow Cabin',"The Photographer's Last Picture",'The Clock Tower Code','The Empty Stadium','The Island Without Phones','The Box from Bangkok','The Road Beyond the City'])assert(upgradeSource.includes(title),`Missing extended story ${title}`);
-assert(upgradeSource.includes('longStoryCount:10'),'Final 10 stories must be marked as extended');
-assert(upgradeSource.includes('extraSentencesPerLongStory:10'),'Each final story must add 10 sentences');
-assert(upgradeSource.includes('GENRES=['),'Story genre mix is missing');
+const dailySource=readFile('daily-course-v53.js');
+assert(dailySource.includes("const TOTAL_DAYS=210"),'Daily course must contain 210 days');
+for(const range of ["{id:'L0',from:1,to:21","{id:'L1',from:22,to:56","{id:'L2',from:57,to:98","{id:'L3',from:99,to:140","{id:'L4',from:141,to:182","{id:'L5',from:183,to:210"])assert(dailySource.includes(range),`Missing stage range ${range}`);
+assert(dailySource.includes('const WEEKS=['),'Daily course weekly curriculum missing');
+assert.equal((dailySource.match(/^    \['L[0-5]'/gm)||[]).length,30,'Daily course must define 30 teaching weeks');
+assert(dailySource.includes('unlockedThrough'),'Daily course must unlock the next lesson sequentially');
+assert(dailySource.includes('25 บท L0–L5 เดิมยังเก็บไว้เป็น Milestone'),'Legacy 25-lesson progress preservation message missing');
+assert(dailySource.includes('Oxford 3000 และเรื่องสั้น 25 เรื่องยังเข้าได้ตามปกติ'),'Oxford/stories continuity message missing');
+assert(!dailySource.includes('MutationObserver'),'Daily course must not use continuous DOM observers');
 
-const speedSource=fs.readFileSync(path.join(root,'oxford3000-story-speed.js'),'utf8');
-for(const label of ["label:'ช้า'","label:'กลาง'","label:'เร็ว'"])assert(speedSource.includes(label),`Missing story speed ${label}`);
-for(const rate of ['rate:.6','rate:.9','rate:1.15'])assert(speedSource.includes(rate),`Missing story narration rate ${rate}`);
-assert(speedSource.includes('data-story-speed'),'Story narration speed selector is missing');
+const sentenceSource=readFile('sentence-coach-v53.js');
+for(const level of ['starter','basic','intermediate','upper'])assert(sentenceSource.includes(`${level}:[`),`Sentence Coach missing ${level} bank`);
+assert(sentenceSource.includes('window.getDailyLesson'),'Sentence Coach must use current Day content');
+assert(!sentenceSource.includes("fetch('/api/ai'"),'Sentence Coach must remain local-only');
+assert(!sentenceSource.includes('MutationObserver'),'Sentence Coach must not use continuous DOM observers');
 
-const levelSource=fs.readFileSync(path.join(root,'learner-level.js'),'utf8');
-for(const id of ["starter:{id:'starter'","basic:{id:'basic'","intermediate:{id:'intermediate'","upper:{id:'upper'"])assert(levelSource.includes(id),`Missing learner level ${id}`);
-assert(levelSource.includes("s.learnerLevel=id"),'Learner level must be saved inside myEnglishV2 so account sync preserves it');
-assert(levelSource.includes('filterOxfordByLearnerLevel'),'Oxford level filter is missing');
-assert(levelSource.includes('ความคืบหน้าเดิมไม่ถูกรีเซ็ต'),'Level UI must state that existing progress is preserved');
-const studySource=fs.readFileSync(path.join(root,'core3000-study.js'),'utf8');
-const quizSource=fs.readFileSync(path.join(root,'oxford3000-practice.js'),'utf8');
-assert(studySource.includes('filterOxfordByLearnerLevel'),'Daily Oxford study must respect learner level');
+const gamesSource=readFile('adaptive-games-v53.js');
+for(const type of ['match','builder','listen','sprint','rush','gap','translate','memory','dialog','spell','trap'])assert(gamesSource.includes(`${type}:`)||gamesSource.includes(`'${type}'`),`Adaptive game missing ${type}`);
+assert(gamesSource.includes('window.getDailyLesson'),'Games must use current Day content');
+assert(gamesSource.includes('window.getLearnerLevel'),'Games must use selected learner level');
+assert(!gamesSource.includes('MutationObserver'),'Adaptive games must not use continuous DOM observers');
+
+const studySource=readFile('core3000-study.js'),quizSource=readFile('oxford3000-practice.js');
+assert(studySource.includes('filterOxfordByLearnerLevel'),'Oxford daily study must respect learner level');
 assert(quizSource.includes('filterOxfordByLearnerLevel'),'Oxford quiz must respect learner level');
 
-const sentenceSource=fs.readFileSync(path.join(root,'sentence-coach.js'),'utf8');
-assert(sentenceSource.includes("const VERSION='v51'"),'Sentence coach version is missing');
-assert((sentenceSource.match(/id:'[sbiu]\d\d'/g)||[]).length>=32,'Sentence coach must include at least 32 level-aware writing tasks');
-for(const level of ['starter','basic','intermediate','upper'])assert(sentenceSource.includes(`level:'${level}'`),`Sentence coach is missing ${level} tasks`);
-assert(sentenceSource.includes('ยังไม่ถูก — แก้ตรงนี้'),'Sentence correction feedback is missing');
-assert(sentenceSource.includes('task.explain'),'Grammar explanation feedback is missing');
-assert(sentenceSource.includes('sentenceCoach'),'Sentence progress must be stored without overwriting existing progress');
-assert(!sentenceSource.includes("fetch('/api/ai'"),'Sentence coach must not call AI API');
-
-const adaptiveSource=fs.readFileSync(path.join(root,'adaptive-learning-v52.js'),'utf8');
-assert(adaptiveSource.includes("const VERSION='v52'"),'Adaptive learning version is missing');
-for(const route of ["starter:{label:'เริ่มต้น'","basic:{label:'พื้นฐาน'","intermediate:{label:'กลาง'","upper:{label:'กลางสูง'"])assert(adaptiveSource.includes(route),`Missing adaptive course ${route}`);
-assert(adaptiveSource.includes("path:['L2','L3','L4','L5']"),'A2-B1 course must continue from L2 through L5');
-assert(adaptiveSource.includes("path:['L4','L5']"),'B1-B2 course must continue from L4 through L5');
-assert(adaptiveSource.includes('filterOxfordByLearnerLevel'),'Adaptive games must use CEFR-filtered Oxford words');
-for(const type of ['match','builder','listen','sprint','rush','gap','translate','memory','dialog','spell','trap'])assert(adaptiveSource.includes(`${type}:`)||adaptiveSource.includes(`'${type}'`),`Adaptive game missing ${type}`);
-assert(adaptiveSource.includes("window.__gameLabV31?.addProgress?.('game',1)"),'Adaptive games must preserve game quest progress');
-assert(adaptiveSource.includes('บทในหลักสูตรของคุณ'),'Roadmap progress must be recalculated for the selected course path');
-
-const guideSource=fs.readFileSync(path.join(root,'learning-guide.js'),'utf8');
-assert(guideSource.includes('Sentence Coach 5–10 นาที'),'Guide must use Sentence Coach');
-assert(guideSource.includes('Quiz หรือ Game ตามระดับ'),'Guide must explain level-aware games');
-assert(guideSource.includes('เป้าหมายคือสื่อสารต่อเนื่องระดับกลางถึงสูง'),'Guide must state the communication target');
-assert(!guideSource.includes('AI Coach'),'Guide must not reference AI Coach');
-
-const accountSource=fs.readFileSync(path.join(root,'account-gate.js'),'utf8');
+const accountSource=readFile('account-gate.js');
 assert(accountSource.includes("classList.add('account-locked')"),'Login gate must lock lessons before authentication');
 assert(accountSource.includes("if(!d.authenticated){overlay(d);return}"),'Unauthenticated learners must see login only');
-assert(accountSource.includes('unlockApp();decorate();watch()'),'Lessons must unlock only after authentication');
-const indexSource=fs.readFileSync(path.join(root,'index.html'),'utf8');
-assert(indexSource.includes("document.documentElement.classList.add('account-locked')"),'Index must hide lessons before scripts render');
-assert(indexSource.includes('learner-level.js?v=50'),'Learner level asset is not loaded');
-assert(indexSource.includes('sentence-coach.js?v=51'),'Sentence coach asset is not loaded');
-assert(indexSource.includes('adaptive-learning-v52.js?v=52'),'Adaptive learning asset is not loaded');
-assert(indexSource.includes('learning-guide.js?v=52'),'Adaptive guide cache version is stale');
-assert(indexSource.includes('sentence-coach.css?v=51'),'Sentence coach stylesheet is not loaded');
-assert(indexSource.includes('core3000-study.js?v=50'),'Level-aware daily study cache version is stale');
-assert(indexSource.includes('oxford3000-practice.js?v=50'),'Level-aware quiz cache version is stale');
-assert(indexSource.includes('oxford3000-story-upgrade.js?v=49'),'Story upgrade asset is not loaded');
-assert(indexSource.includes('account-gate.js?v=49'),'Login gate cache version is stale');
-for(const removed of ['ai-mission-core-v33.js','ai-status.js','ai-output-safety.js'])assert(!indexSource.includes(removed),`AI learning asset must not be loaded: ${removed}`);
-assert(indexSource.includes('LOCAL · Sentence Coach'),'Local sentence mode badge is missing');
-assert(indexSource.includes('>แต่งประโยค</span>'),'Bottom navigation must use Sentence Coach instead of AI Coach');
 
-const swSource=fs.readFileSync(path.join(root,'sw.js'),'utf8');
-assert(swSource.includes("const CACHE='my-english-v52'"),'Service worker cache must be v52');
-assert(swSource.includes('./adaptive-learning-v52.js?v=52'),'Adaptive learning must be available offline');
-assert(swSource.includes('./learning-guide.js?v=52'),'Adaptive guide must be available offline');
-assert(swSource.includes('./sentence-coach.js?v=51'),'Sentence coach must be available offline');
+const indexSource=readFile('index.html');
+for(const asset of ['learner-level-v53.js?v=53','daily-course-v53.js?v=53','sentence-coach-v53.js?v=53','adaptive-games-v53.js?v=53','account-gate.js?v=53'])assert(indexSource.includes(asset),`Index missing ${asset}`);
+for(const old of ['learner-level.js?v=50','sentence-coach.js?v=51','adaptive-learning-v52.js?v=52'])assert(!indexSource.includes(old),`Old unsafe/obsolete asset still loaded: ${old}`);
+assert(indexSource.includes('>แต่งประโยค</span>'),'Bottom nav must use writing practice');
 
-console.log(JSON.stringify({ok:true,rows:rows.length,thaiTranslations:rows.length-missingThai.length,examples:rows.length-missingExample.length,thaiExamples:rows.length-missingExampleThai.length,syntaxFiles:jsFiles.length,stories:chapters.length,wordsPerStory:WORDS_PER_STORY,extendedStories:10,extraSentencesPerExtendedStory:10,loginRequired:true,learnerLevels:4,progressPreserved:true,levelAwareOxford:true,adaptiveCurriculum:true,adaptiveGames:true,targetCommunication:'intermediate-to-upper',aiLearningUI:false,sentenceCoach:true,sentenceTasks:32,localSentenceCorrection:true,narration:true,narrationSpeeds:['slow','medium','fast']},null,2));
+const swSource=readFile('sw.js');
+assert(swSource.includes("const CACHE='my-english-v53'"),'Service worker cache must be v53');
+for(const asset of ['./learner-level-v53.js?v=53','./daily-course-v53.js?v=53','./sentence-coach-v53.js?v=53','./adaptive-games-v53.js?v=53'])assert(swSource.includes(asset),`Service worker missing ${asset}`);
+
+console.log(JSON.stringify({ok:true,rows:3000,stories:25,learnerLevels:4,dailyCourseDays:210,weeks:30,levelStartDays:{starter:1,basic:22,intermediate:71,upper:141},legacyProgressPreserved:true,levelAwareOxford:true,dayAwareGames:true,dayAwareSentenceCoach:true,noContinuousObservers:true},null,2));

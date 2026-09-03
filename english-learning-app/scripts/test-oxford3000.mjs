@@ -19,7 +19,7 @@ assert.equal(rows.filter(r=>!String(get(r,'example',5)||r?.sentence||'').trim())
 assert.equal(rows.filter(r=>!/[ก-๙]/.test(String(get(r,'exampleThai',6)||r?.example_thai||r?.sentenceThai||''))).length,0,'Thai examples missing');
 assert.equal(new Set(rows.map((r,i)=>get(r,'id',0)??i+1)).size,3000,'Oxford IDs must be unique');
 
-const jsFiles=['learner-level-v53.js','daily-course-v53.js','sentence-coach-v55.js','adaptive-games-v54.js','learning-experience-v55.js','learning-guide.js','oxford3000-loader.js','oxford3000-core.js','core3000-study.js','core3000-library.js','oxford3000-practice.js','oxford3000-stories.js','oxford3000-story-upgrade.js','oxford3000-story-speed.js','core3000-plan.js','account-gate.js'];
+const jsFiles=['learner-level-v53.js','daily-course-v53.js','sentence-coach-v55.js','game-content-v56.js','adaptive-games-v54.js','learning-experience-v55.js','learning-guide.js','oxford3000-loader.js','oxford3000-core.js','core3000-study.js','core3000-library.js','oxford3000-practice.js','oxford3000-stories.js','oxford3000-story-upgrade.js','oxford3000-story-speed.js','core3000-plan.js','account-gate.js'];
 for(const file of jsFiles){const check=spawnSync(process.execPath,['--check',path.join(root,file)],{encoding:'utf8'});assert.equal(check.status,0,`${file} syntax error:\n${check.stderr||check.stdout}`)}
 
 const storySource=readFile('oxford3000-stories.js');
@@ -67,6 +67,17 @@ assert(gamesSource.includes("next(d,'dialog'"),'Survival Dialog must continue au
 assert(gamesSource.includes('SENTENCE COACH Surprise Mission'),'Mission UI must no longer say AI');
 assert(!gamesSource.includes('MutationObserver'),'Adaptive games must not use continuous DOM observers');
 
+const gameContent=readFile('game-content-v56.js');
+assert(gameContent.includes("const VERSION='v56'"),'Expanded game content must be v56');
+assert(gameContent.includes('window.getOxford3000'),'Game content must draw from Oxford 3000');
+assert(gameContent.includes('window.filterOxfordByLearnerLevel'),'Game content must respect selected CEFR level');
+assert(gameContent.includes('Math.min(360,pool.length)'),'Word games must use a broad rotating Oxford pool');
+assert(gameContent.includes('sentenceRows'),'Sentence games must use the Oxford example-sentence pool');
+for(const type of ['builder','gap','translate','dialog','context'])assert(gameContent.includes(`'${type}'`),`Expanded sentence game missing ${type}`);
+assert(gameContent.includes('recent={word:[],sentence:[],type:[]}'),'Expanded games must track recent words/sentences/types');
+assert(gameContent.includes('maxBlock=90'),'Expanded games must avoid a large recent window');
+assert(!gameContent.includes('MutationObserver'),'Expanded game content must not add continuous DOM observers');
+
 const experienceSource=readFile('learning-experience-v55.js');
 for(const activity of ['ฟังแล้วพูดตาม','Pattern Lab · เรียงประโยค','คำศัพท์ในบริบท + Quick Check','Mini Dialogue · เลือกคำตอบที่ใช้จริง'])assert(experienceSource.includes(activity),`Interactive lesson missing ${activity}`);
 assert(experienceSource.includes('พร้อมผ่านบทเมื่อทำอย่างน้อย 3/4 กิจกรรมหลัก'),'Lesson must require meaningful activity before completion');
@@ -88,14 +99,15 @@ assert(accountSource.includes("classList.add('account-locked')"),'Login gate mus
 assert(accountSource.includes("if(!d.authenticated){overlay(d);return}"),'Unauthenticated learners must see login only');
 
 const indexSource=readFile('index.html');
-for(const asset of ['learner-level-v53.js?v=53','daily-course-v53.js?v=53','sentence-coach-v55.js?v=55','adaptive-games-v54.js?v=54','learning-experience-v55.js?v=55','account-gate.js?v=53'])assert(indexSource.includes(asset),`Index missing ${asset}`);
+for(const asset of ['learner-level-v53.js?v=53','daily-course-v53.js?v=53','sentence-coach-v55.js?v=55','game-content-v56.js?v=56','adaptive-games-v54.js?v=54','learning-experience-v55.js?v=55','account-gate.js?v=53'])assert(indexSource.includes(asset),`Index missing ${asset}`);
 for(const old of ['sentence-coach-v54.js?v=54','learning-ui-v54.js?v=54','sentence-coach-v53.js?v=53','adaptive-games-v53.js?v=53','complete-course.js','complete-course.css'])assert(!indexSource.includes(old),`Obsolete/unused UI still loaded: ${old}`);
+assert(indexSource.indexOf('game-content-v56.js?v=56')<indexSource.indexOf('adaptive-games-v54.js?v=54'),'Expanded game content must load before adaptive game listeners');
 assert(indexSource.includes('>SENTENCE COACH</span>'),'Bottom nav must use SENTENCE COACH wording');
 assert(indexSource.includes('210 บทเรียน'),'Index must use lesson terminology');
 
 const swSource=readFile('sw.js');
-assert(swSource.includes("const CACHE='my-english-v55'"),'Service worker cache must be v55');
-for(const asset of ['./daily-course-v53.js?v=53','./sentence-coach-v55.js?v=55','./adaptive-games-v54.js?v=54','./learning-experience-v55.js?v=55'])assert(swSource.includes(asset),`Service worker missing ${asset}`);
+assert(swSource.includes("const CACHE='my-english-v56'"),'Service worker cache must be v56');
+for(const asset of ['./daily-course-v53.js?v=53','./sentence-coach-v55.js?v=55','./game-content-v56.js?v=56','./adaptive-games-v54.js?v=54','./learning-experience-v55.js?v=55'])assert(swSource.includes(asset),`Service worker missing ${asset}`);
 for(const removed of ['./sentence-coach-v54.js?v=54','./learning-ui-v54.js?v=54','./sentence-coach-v53.js?v=53','./complete-course.js?v=33','./complete-course.css?v=33'])assert(!swSource.includes(removed),`Service worker still caches removed asset ${removed}`);
 
-console.log(JSON.stringify({ok:true,rows:3000,stories:25,learnerLevels:4,courseLessons:210,weeks:30,levelStartLessons:{starter:1,basic:22,intermediate:71,upper:141},legacyProgressPreserved:true,levelAwareOxford:true,endlessRandomGames:true,fullScreenSentenceCoach:true,continuousSentenceCoach:true,spokenCorrectAnswers:true,interactiveLessonActivities:4,dynamicSkillRoadmap:true,staticMilestoneHidden:true,lessonTerminology:true,noContinuousObservers:true},null,2));
+console.log(JSON.stringify({ok:true,rows:3000,stories:25,learnerLevels:4,courseLessons:210,weeks:30,levelStartLessons:{starter:1,basic:22,intermediate:71,upper:141},legacyProgressPreserved:true,levelAwareOxford:true,endlessRandomGames:true,expandedOxfordGamePools:true,expandedSentenceGames:true,fullScreenSentenceCoach:true,continuousSentenceCoach:true,spokenCorrectAnswers:true,interactiveLessonActivities:4,dynamicSkillRoadmap:true,staticMilestoneHidden:true,lessonTerminology:true,noContinuousObservers:true},null,2));

@@ -30,7 +30,7 @@ assert.equal(missingExampleThai.length,0,`Rows without Thai example: ${missingEx
 const ids=rows.map((r,i)=>read(r,'id',0)??i+1);
 assert.equal(new Set(ids).size,3000,'Oxford IDs are not unique');
 
-const jsFiles=['oxford3000-loader.js','oxford3000-core.js','core3000-study.js','core3000-library.js','oxford3000-practice.js','oxford3000-stories.js','core3000-plan.js'];
+const jsFiles=['oxford3000-loader.js','oxford3000-core.js','core3000-study.js','core3000-library.js','oxford3000-practice.js','oxford3000-stories.js','oxford3000-story-speed.js','core3000-plan.js'];
 for(const file of jsFiles){
   const check=spawnSync(process.execPath,['--check',path.join(root,file)],{encoding:'utf8'});
   assert.equal(check.status,0,`${file} syntax error:\n${check.stderr||check.stdout}`);
@@ -51,4 +51,9 @@ assert.equal((storySource.match(/title:`/g)||[]).length,25,'Expected exactly 25 
 for(const control of ['storyReadAll','storyPause','storyStop'])assert(storySource.includes(control),`Missing narration control ${control}`);
 assert(storySource.includes('SpeechSynthesisUtterance'),'Whole-story speech synthesis is missing');
 
-console.log(JSON.stringify({ok:true,rows:rows.length,thaiTranslations:rows.length-missingThai.length,examples:rows.length-missingExample.length,thaiExamples:rows.length-missingExampleThai.length,syntaxFiles:jsFiles.length,stories:chapters.length,wordsPerStory:WORDS_PER_STORY,narration:true},null,2));
+const speedSource=fs.readFileSync(path.join(root,'oxford3000-story-speed.js'),'utf8');
+for(const label of ["label:'ช้า'","label:'กลาง'","label:'เร็ว'"])assert(speedSource.includes(label),`Missing story speed ${label}`);
+for(const rate of ['rate:.75','rate:.9','rate:1.15'])assert(speedSource.includes(rate),`Missing story narration rate ${rate}`);
+assert(speedSource.includes('data-story-speed'),'Story narration speed selector is missing');
+
+console.log(JSON.stringify({ok:true,rows:rows.length,thaiTranslations:rows.length-missingThai.length,examples:rows.length-missingExample.length,thaiExamples:rows.length-missingExampleThai.length,syntaxFiles:jsFiles.length,stories:chapters.length,wordsPerStory:WORDS_PER_STORY,narration:true,narrationSpeeds:['slow','medium','fast']},null,2));

@@ -1,6 +1,11 @@
 (()=>{
   const VERSION='v58';
   const term=text=>String(text??'')
+    .replace(/ดูบทเรียน\s+(?:DAY|Day)\s+(\d+)\b/g,'ดูบทเรียนที่ $1')
+    .replace(/เลือก\s+(?:DAY|Day)\b/g,'เลือกบทเรียน')
+    .replace(/เรียน\s+(?:DAY|Day)\s+นี้\b/g,'เรียนบทเรียนนี้')
+    .replace(/ผ่าน\s+(?:DAY|Day)\s+นี้\b/g,'ผ่านบทเรียนนี้')
+    .replace(/ของ\s+(?:DAY|Day)\s+นี้\b/g,'ของบทเรียนนี้')
     .replace(/\b(?:DAY|Day)\s+(\d+)\s*[–-]\s*(\d+)\b/g,'บทเรียนที่ $1–$2')
     .replace(/\b(?:DAY|Day)\s+(\d+)\b/g,'บทเรียนที่ $1')
     .replace(/\b(?:DAY|Day)\s+ถัดไป\b/g,'บทเรียนถัดไป')

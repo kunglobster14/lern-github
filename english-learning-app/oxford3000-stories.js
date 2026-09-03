@@ -1,6 +1,6 @@
 (()=>{
   const STORY_SEED=300043;
-  const esc=v=>typeof window.oxfordEsc==='function'?window.oxfordEsc(v):String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[ch]));
+  const esc=v=>typeof window.oxfordEsc==='function'?window.oxfordEsc(v):String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const say=v=>typeof window.oxfordSpeak==='function'?window.oxfordSpeak(v):(()=>{try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(v||''));u.lang='en-US';u.rate=.86;speechSynthesis.speak(u)}catch{}})();
   const reading=v=>typeof window.oxfordThaiReading==='function'?window.oxfordThaiReading(v):String(v||'');
   const shuffle=a=>typeof window.oxfordShuffle==='function'?window.oxfordShuffle(a,STORY_SEED):[...a];

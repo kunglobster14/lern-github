@@ -29,7 +29,7 @@ assert(index.includes('course-game-fixes-v59.js?v=59'),'Index must load v59 afte
 assert(index.indexOf('course-game-fixes-v59.js?v=59')>index.indexOf('terminology-v58.js?v=58'),'v59 must load after terminology v58');
 assert(index.includes('LOCAL · 210 บทเรียน'),'Top badge must use Thai lesson terminology');
 const sw=fs.readFileSync('sw.js','utf8');
-assert(sw.includes("const CACHE='my-english-v59'"),'Service worker cache must be v59');
+assert(sw.includes("const CACHE='my-english-v61'"),'Service worker cache must be v61');
 assert(sw.includes('./terminology-v58.js?v=58'),'Service worker must cache terminology v58');
 assert(sw.includes('./course-game-fixes-v59.js?v=59'),'Service worker must cache v59 fixes');
-console.log(JSON.stringify({ok:true,version:'v58',dayUiRemoved:true,examples:['บทเรียนที่ 1','เลือกบทเรียน','บทเรียนถัดไป'],compatibleWith:'v59'},null,2));
+console.log(JSON.stringify({ok:true,version:'v58',dayUiRemoved:true,examples:['บทเรียนที่ 1','เลือกบทเรียน','บทเรียนถัดไป'],compatibleWith:'v61'},null,2));

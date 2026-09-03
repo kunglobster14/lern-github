@@ -9,3 +9,4 @@ Do not re-enable the old `game-lab.js`, `game-lab-plus.js`, `game-flow.js`, `ai-
 The app remains $0-first and uses Groq free only for online AI, with Local Coach fallback.
 
 Deployment retry: latest main including the account-sync performance hotfix.
+Deployment retry: v53 210-day curriculum and level-aware learning system.

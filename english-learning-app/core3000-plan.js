@@ -36,13 +36,16 @@
       <div class="core3000-progress"><i style="width:${pct}%"></i></div>
       <div class="core3000-stats"><div><b>${p.daily}</b><span>คำใหม่/วัน</span></div><div><b>${e.weekly}</b><span>คำใหม่/สัปดาห์</span></div><div><b>~${e.weeks}</b><span>สัปดาห์</span></div><div><b>~${e.months}</b><span>เดือน</span></div></div>
       <div class="core3000-routine"><b>🎧 วิธีผ่านแต่ละคำ</b><span>ฟังและพูดตาม 3 รอบ → รู้ความหมาย → อ่านประโยคตัวอย่าง → กดผ่านคำนี้</span></div>
-      <div class="core3000-actions"><button type="button" class="secondary-btn" id="core3000Settings">ปรับจำนวนคำ/วัน</button><button type="button" class="primary-btn" id="core3000Start">เริ่ม ${p.daily} คำวันนี้</button></div>
+      <div class="core3000-actions three"><button type="button" class="secondary-btn" id="core3000Library">ดูคำศัพท์ทั้งหมด 3,000 คำ</button><button type="button" class="secondary-btn" id="core3000Settings">ปรับจำนวนคำ/วัน</button><button type="button" class="primary-btn" id="core3000Start">เริ่ม ${p.daily} คำวันนี้</button></div>
       <small class="core3000-note">ทบทวนแบบเว้นระยะ: วัน ${reviewSchedule.join(' · ')} หลังเรียนคำใหม่ · แหล่งคำความถี่ใช้เพื่อการศึกษา/ส่วนตัวและคัดกรองให้เหมาะกับผู้เรียน</small>
     </section>`;
     anchor.insertAdjacentHTML('afterend',html);
     document.querySelector('#core3000Start')?.addEventListener('click',()=>{
       if(typeof window.openCore3000Study==='function')window.openCore3000Study();
       else go('learn');
+    });
+    document.querySelector('#core3000Library')?.addEventListener('click',()=>{
+      if(typeof window.openCore3000Library==='function')window.openCore3000Library();
     });
     document.querySelector('#core3000Settings')?.addEventListener('click',openSettings);
   }

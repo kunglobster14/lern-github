@@ -3,6 +3,8 @@
   const PROFILE_STORE='myEnglishLocalProfilesV1';
   const ACTIVE_PROFILE='myEnglishActiveProfileV1';
   let status=null,enabled=false,last='',timer=null;
+  document.documentElement.classList.add('account-locked');
+  const unlockApp=()=>document.documentElement.classList.remove('account-locked');
   const api=async(options={})=>{const r=await fetch(options.url||'/api/account',{cache:'no-store',credentials:'same-origin',...options});const d=await r.json().catch(()=>({}));return{r,d}};
   const snap=()=>{const o={};KEYS.forEach(k=>{const v=localStorage.getItem(k);if(v!==null){try{o[k]=JSON.parse(v)}catch{o[k]=v}}});return o};
   const clear=()=>KEYS.forEach(k=>localStorage.removeItem(k));
@@ -27,17 +29,24 @@
   function overlay(s){
     document.querySelector('#accountOverlay')?.remove();
     const el=document.createElement('div');el.className='account-overlay';el.id='accountOverlay';
-    el.innerHTML=`<section class="account-card"><div class="account-logo">M</div>${s.databaseMode==='temporary'?'<span class="account-test">TEMP DATABASE TEST</span>':''}<h1>My English Coach</h1><p>เข้าสู่ระบบด้วยบัญชีผู้เรียน เพื่อให้หลักสูตรและความคืบหน้าแยกจากผู้เรียนคนอื่น</p><label class="account-field"><span>Username</span><input id="aUser" autocomplete="username"></label><label class="account-field"><span>Password</span><input id="aPass" type="password" autocomplete="current-password"></label><div class="account-error" id="aError"></div><div class="account-actions"><button class="account-primary" id="aLogin">เข้าสู่ระบบ</button></div><p class="account-note">Core 3000, หลักสูตร, Quiz, Review และ XP จะบันทึกแยกตามบัญชี ผู้ดูแลเป็นผู้สร้างบัญชีผู้เรียนให้</p></section>`;
+    el.innerHTML=`<section class="account-card"><div class="account-logo">M</div>${s.databaseMode==='temporary'?'<span class="account-test">TEMP DATABASE TEST</span>':''}<h1>เข้าสู่ระบบผู้เรียน</h1><p>เข้าสู่บัญชีก่อนเริ่มเรียน เพื่อไม่ให้บทเรียนและความคืบหน้าของผู้เรียนแต่ละคนสับสนกัน</p><label class="account-field"><span>Username</span><input id="aUser" autocomplete="username" autofocus></label><label class="account-field"><span>Password</span><input id="aPass" type="password" autocomplete="current-password"></label><div class="account-error" id="aError"></div><div class="account-actions"><button class="account-primary" id="aLogin">เข้าสู่ระบบ</button></div><p class="account-note">หากยังไม่มีบัญชี กรุณาให้ผู้ดูแลสร้างบัญชีผู้เรียนให้ · ไม่มีการสมัครสมาชิกจากหน้านี้</p></section>`;
     document.body.appendChild(el);
     const submit=async()=>{
       const e=el.querySelector('#aError');e.textContent='กำลังเข้าสู่ระบบ...';
       const payload={action:'login',username:el.querySelector('#aUser').value.trim(),password:el.querySelector('#aPass').value};
-      const {r,d}=await api({method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+      const {r,d}=await api({method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}).catch(()=>({r:{ok:false},d:{}}));
       if(!r.ok){e.textContent=errorText(d.error);return}
       clear();sessionStorage.clear();location.reload();
     };
     el.querySelector('#aLogin').onclick=submit;
     el.querySelector('#aPass').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submit()}});
+  }
+
+  function unavailable(message){
+    document.querySelector('#accountOverlay')?.remove();
+    const el=document.createElement('div');el.className='account-overlay';el.id='accountOverlay';
+    el.innerHTML=`<section class="account-card"><div class="account-logo">M</div><h1>ยังเปิดบทเรียนไม่ได้</h1><p>${message}</p><div class="account-actions"><button class="account-primary" id="accountRetry">ลองเชื่อมต่อใหม่</button></div><p class="account-note">ระบบซ่อนหน้าบทเรียนไว้จนกว่าจะตรวจสอบบัญชีผู้เรียนสำเร็จ เพื่อป้องกันข้อมูลสลับกัน</p></section>`;
+    document.body.appendChild(el);el.querySelector('#accountRetry').onclick=()=>location.reload();
   }
 
   async function logout(){
@@ -59,6 +68,15 @@
     ['exportBackupBtn','importBackupBtn'].forEach(id=>{const el=document.querySelector('#'+id);if(el)el.style.display='none'});
   }
 
-  async function boot(){const {r,d}=await api().catch(()=>({r:{ok:false},d:{}}));if(!r.ok||!d.dbConfigured)return;enabled=true;status=d;if(!d.authenticated){overlay(d);return}const m=`myEnglishHydrated:${d.user.id}`;if(!sessionStorage.getItem(m)){await pull();sessionStorage.setItem(m,'1');location.reload();return}last=JSON.stringify(snap());decorate();watch()}
+  async function boot(){
+    const {r,d}=await api().catch(()=>({r:{ok:false},d:{}}));
+    if(!r.ok){unavailable('ไม่สามารถตรวจสอบบัญชีผู้เรียนได้ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่');return}
+    if(!d.dbConfigured){unavailable('ระบบบัญชีผู้เรียนยังไม่ได้เชื่อมฐานข้อมูล กรุณาแจ้งผู้ดูแล');return}
+    enabled=true;status=d;
+    if(!d.authenticated){overlay(d);return}
+    const m=`myEnglishHydrated:${d.user.id}`;
+    if(!sessionStorage.getItem(m)){await pull();sessionStorage.setItem(m,'1');location.reload();return}
+    last=JSON.stringify(snap());unlockApp();decorate();watch();
+  }
   boot();
 })();

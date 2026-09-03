@@ -30,7 +30,7 @@ assert.equal(missingExampleThai.length,0,`Rows without Thai example: ${missingEx
 const ids=rows.map((r,i)=>read(r,'id',0)??i+1);
 assert.equal(new Set(ids).size,3000,'Oxford IDs are not unique');
 
-const jsFiles=['oxford3000-loader.js','oxford3000-core.js','core3000-study.js','core3000-library.js','oxford3000-practice.js','oxford3000-stories.js','oxford3000-story-speed.js','core3000-plan.js'];
+const jsFiles=['oxford3000-loader.js','oxford3000-core.js','core3000-study.js','core3000-library.js','oxford3000-practice.js','oxford3000-stories.js','oxford3000-story-upgrade.js','oxford3000-story-speed.js','core3000-plan.js','account-gate.js'];
 for(const file of jsFiles){
   const check=spawnSync(process.execPath,['--check',path.join(root,file)],{encoding:'utf8'});
   assert.equal(check.status,0,`${file} syntax error:\n${check.stderr||check.stdout}`);
@@ -51,9 +51,24 @@ assert.equal((storySource.match(/title:`/g)||[]).length,25,'Expected exactly 25 
 for(const control of ['storyReadAll','storyPause','storyStop'])assert(storySource.includes(control),`Missing narration control ${control}`);
 assert(storySource.includes('SpeechSynthesisUtterance'),'Whole-story speech synthesis is missing');
 
+const upgradeSource=fs.readFileSync(path.join(root,'oxford3000-story-upgrade.js'),'utf8');
+for(const title of ['The Girl Who Found a Map','The Underground Garden','Flight 207','The Snow Cabin',"The Photographer's Last Picture",'The Clock Tower Code','The Empty Stadium','The Island Without Phones','The Box from Bangkok','The Road Beyond the City'])assert(upgradeSource.includes(title),`Missing extended story ${title}`);
+assert(upgradeSource.includes('longStoryCount:10'),'Final 10 stories must be marked as extended');
+assert(upgradeSource.includes('extraSentencesPerLongStory:10'),'Each final story must add 10 sentences');
+assert(upgradeSource.includes('GENRES=['),'Story genre mix is missing');
+
 const speedSource=fs.readFileSync(path.join(root,'oxford3000-story-speed.js'),'utf8');
 for(const label of ["label:'ช้า'","label:'กลาง'","label:'เร็ว'"])assert(speedSource.includes(label),`Missing story speed ${label}`);
 for(const rate of ['rate:.6','rate:.9','rate:1.15'])assert(speedSource.includes(rate),`Missing story narration rate ${rate}`);
 assert(speedSource.includes('data-story-speed'),'Story narration speed selector is missing');
 
-console.log(JSON.stringify({ok:true,rows:rows.length,thaiTranslations:rows.length-missingThai.length,examples:rows.length-missingExample.length,thaiExamples:rows.length-missingExampleThai.length,syntaxFiles:jsFiles.length,stories:chapters.length,wordsPerStory:WORDS_PER_STORY,narration:true,narrationSpeeds:['slow','medium','fast']},null,2));
+const accountSource=fs.readFileSync(path.join(root,'account-gate.js'),'utf8');
+assert(accountSource.includes("classList.add('account-locked')"),'Login gate must lock lessons before authentication');
+assert(accountSource.includes("if(!d.authenticated){overlay(d);return}"),'Unauthenticated learners must see login only');
+assert(accountSource.includes('unlockApp();decorate();watch()'),'Lessons must unlock only after authentication');
+const indexSource=fs.readFileSync(path.join(root,'index.html'),'utf8');
+assert(indexSource.includes("document.documentElement.classList.add('account-locked')"),'Index must hide lessons before scripts render');
+assert(indexSource.includes('oxford3000-story-upgrade.js?v=49'),'Story upgrade asset is not loaded');
+assert(indexSource.includes('account-gate.js?v=49'),'Login gate cache version is stale');
+
+console.log(JSON.stringify({ok:true,rows:rows.length,thaiTranslations:rows.length-missingThai.length,examples:rows.length-missingExample.length,thaiExamples:rows.length-missingExampleThai.length,syntaxFiles:jsFiles.length,stories:chapters.length,wordsPerStory:WORDS_PER_STORY,extendedStories:10,extraSentencesPerExtendedStory:10,loginRequired:true,narration:true,narrationSpeeds:['slow','medium','fast']},null,2));

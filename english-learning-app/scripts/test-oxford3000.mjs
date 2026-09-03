@@ -30,7 +30,7 @@ assert.equal(missingExampleThai.length,0,`Rows without Thai example: ${missingEx
 const ids=rows.map((r,i)=>read(r,'id',0)??i+1);
 assert.equal(new Set(ids).size,3000,'Oxford IDs are not unique');
 
-const jsFiles=['oxford3000-loader.js','oxford3000-core.js','core3000-study.js','core3000-library.js','oxford3000-practice.js','oxford3000-stories.js','oxford3000-story-upgrade.js','oxford3000-story-speed.js','core3000-plan.js','account-gate.js'];
+const jsFiles=['learner-level.js','oxford3000-loader.js','oxford3000-core.js','core3000-study.js','core3000-library.js','oxford3000-practice.js','oxford3000-stories.js','oxford3000-story-upgrade.js','oxford3000-story-speed.js','core3000-plan.js','account-gate.js'];
 for(const file of jsFiles){
   const check=spawnSync(process.execPath,['--check',path.join(root,file)],{encoding:'utf8'});
   assert.equal(check.status,0,`${file} syntax error:\n${check.stderr||check.stdout}`);
@@ -62,13 +62,26 @@ for(const label of ["label:'ช้า'","label:'กลาง'","label:'เร็
 for(const rate of ['rate:.6','rate:.9','rate:1.15'])assert(speedSource.includes(rate),`Missing story narration rate ${rate}`);
 assert(speedSource.includes('data-story-speed'),'Story narration speed selector is missing');
 
+const levelSource=fs.readFileSync(path.join(root,'learner-level.js'),'utf8');
+for(const id of ["starter:{id:'starter'","basic:{id:'basic'","intermediate:{id:'intermediate'","upper:{id:'upper'"])assert(levelSource.includes(id),`Missing learner level ${id}`);
+assert(levelSource.includes("s.learnerLevel=id"),'Learner level must be saved inside myEnglishV2 so account sync preserves it');
+assert(levelSource.includes('filterOxfordByLearnerLevel'),'Oxford level filter is missing');
+assert(levelSource.includes('ความคืบหน้าเดิมไม่ถูกรีเซ็ต'),'Level UI must state that existing progress is preserved');
+const studySource=fs.readFileSync(path.join(root,'core3000-study.js'),'utf8');
+const quizSource=fs.readFileSync(path.join(root,'oxford3000-practice.js'),'utf8');
+assert(studySource.includes('filterOxfordByLearnerLevel'),'Daily Oxford study must respect learner level');
+assert(quizSource.includes('filterOxfordByLearnerLevel'),'Oxford quiz must respect learner level');
+
 const accountSource=fs.readFileSync(path.join(root,'account-gate.js'),'utf8');
 assert(accountSource.includes("classList.add('account-locked')"),'Login gate must lock lessons before authentication');
 assert(accountSource.includes("if(!d.authenticated){overlay(d);return}"),'Unauthenticated learners must see login only');
 assert(accountSource.includes('unlockApp();decorate();watch()'),'Lessons must unlock only after authentication');
 const indexSource=fs.readFileSync(path.join(root,'index.html'),'utf8');
 assert(indexSource.includes("document.documentElement.classList.add('account-locked')"),'Index must hide lessons before scripts render');
+assert(indexSource.includes('learner-level.js?v=50'),'Learner level asset is not loaded');
+assert(indexSource.includes('core3000-study.js?v=50'),'Level-aware daily study cache version is stale');
+assert(indexSource.includes('oxford3000-practice.js?v=50'),'Level-aware quiz cache version is stale');
 assert(indexSource.includes('oxford3000-story-upgrade.js?v=49'),'Story upgrade asset is not loaded');
 assert(indexSource.includes('account-gate.js?v=49'),'Login gate cache version is stale');
 
-console.log(JSON.stringify({ok:true,rows:rows.length,thaiTranslations:rows.length-missingThai.length,examples:rows.length-missingExample.length,thaiExamples:rows.length-missingExampleThai.length,syntaxFiles:jsFiles.length,stories:chapters.length,wordsPerStory:WORDS_PER_STORY,extendedStories:10,extraSentencesPerExtendedStory:10,loginRequired:true,narration:true,narrationSpeeds:['slow','medium','fast']},null,2));
+console.log(JSON.stringify({ok:true,rows:rows.length,thaiTranslations:rows.length-missingThai.length,examples:rows.length-missingExample.length,thaiExamples:rows.length-missingExampleThai.length,syntaxFiles:jsFiles.length,stories:chapters.length,wordsPerStory:WORDS_PER_STORY,extendedStories:10,extraSentencesPerExtendedStory:10,loginRequired:true,learnerLevels:4,progressPreserved:true,levelAwareOxford:true,narration:true,narrationSpeeds:['slow','medium','fast']},null,2));

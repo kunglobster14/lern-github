@@ -39,6 +39,7 @@
     if(!dialog||dialog.id!=='gameLabModal')return;
     const title=dialog.querySelector('.game-panel-head h2')?.textContent||'';
     if(!/Missing Word|Survival Dialog/i.test(title))return;
+    const isMissing=/Missing Word/i.test(title);
     dialog.querySelectorAll('.lab-choice').forEach(btn=>{
       if(btn.dataset.readingPatched==='1'||typeof btn.onclick!=='function')return;
       btn.dataset.readingPatched='1';
@@ -52,6 +53,8 @@
         try{original.call(this,event)}finally{window.setTimeout=nativeSetTimeout}
         if(!this.classList.contains('correct'))return;
         const answer=String(this.dataset.value||this.dataset.v||this.textContent||'').trim();
+        const prompt=String(dialog.querySelector('.game-prompt')?.textContent||'').trim();
+        const fullText=isMissing&&prompt?prompt.replace(/_+/,answer):answer;
         let feedback=dialog.querySelector('#choiceReadingFeedback');
         if(!feedback){
           feedback=document.createElement('div');
@@ -59,7 +62,10 @@
           feedback.style.cssText='margin:12px 0 0;padding:12px 14px;border-radius:12px;background:rgba(34,197,94,.12);border:1px solid rgba(74,222,128,.4);color:#dcfce7;font-weight:800;text-align:center;line-height:1.55';
           dialog.querySelector('#gameLabBody')?.appendChild(feedback);
         }
-        feedback.innerHTML=`✅ ถูก<br><span style="font-weight:700;color:#bae6fd">คำอ่าน: ${readingFor(answer)}</span>`;
+        feedback.innerHTML=`✅ ถูก<br><span style="font-weight:700;color:#bae6fd">คำอ่าน: ${readingFor(fullText)}</span>`;
+        if(isMissing){
+          try{if(fullText&&typeof speak==='function')speak(fullText)}catch{}
+        }
       };
     });
   }

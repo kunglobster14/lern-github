@@ -48,8 +48,8 @@
   }
 
   function modal(){
-    document.querySelector('#core3000Library')?.remove();
-    const wrap=document.createElement('div');wrap.id='core3000Library';wrap.className='game-lab-overlay core-library-overlay';
+    document.querySelector('#core3000LibraryModal')?.remove();
+    const wrap=document.createElement('div');wrap.id='core3000LibraryModal';wrap.className='game-lab-overlay core-library-overlay';
     wrap.innerHTML=`<section class="game-panel core-library-panel"><div class="game-panel-head"><div><h2>📖 คลังคำศัพท์ Core 3000</h2><small>ค้นหาและเปิดดูได้ครบ 3,000 คำ · เสียงอ่านใช้เสียงภาษาอังกฤษจากอุปกรณ์</small></div><button class="game-close" type="button">×</button></div><div id="coreLibraryBody"><div class="core-study-loading"><div class="listen-orb">Aa</div><h3>กำลังโหลดคลัง 3,000 คำ...</h3></div></div></section>`;
     document.body.appendChild(wrap);wrap.querySelector('.game-close').onclick=()=>wrap.remove();
     wrap.addEventListener('click',e=>{if(e.target===wrap)wrap.remove()});return wrap;

@@ -23,3 +23,5 @@ jobs:
           node-version: '20'
       - name: Validate Oxford 3000 data and JavaScript
         run: node scripts/test-oxford3000.mjs
+      - name: Audit 210 lesson uniqueness and Quick Check answers
+        run: node scripts/test-course-v57.mjs

@@ -5,7 +5,7 @@ import {spawnSync} from 'node:child_process';
 import assert from 'node:assert/strict';
 
 const root=path.resolve(process.cwd());
-const packFiles=Array.from({length:8},(_,i)=>`oxford3000-pack-${String(i+1).padStart(2,'0')}.js`);
+const packFiles=['oxford3000-pack-01.js','oxford3000-pack-02.js','oxford3000-pack-03.js','oxford3000-pack-03b.js','oxford3000-pack-04.js','oxford3000-pack-05.js','oxford3000-pack-06.js','oxford3000-pack-07.js','oxford3000-pack-08.js'];
 let b64='';
 for(const name of packFiles){
   const text=fs.readFileSync(path.join(root,name),'utf8');
@@ -21,8 +21,12 @@ assert.equal(rows.length,3000,`Expected 3000 rows, got ${rows.length}`);
 const read=(r,key,index)=>Array.isArray(r)?r[index]:r?.[key];
 const missingWord=rows.filter(r=>!String(read(r,'word',1)||'').trim());
 const missingThai=rows.filter(r=>!/[ก-๙]/.test(String(read(r,'thai',4)||read(r,'translation',4)||'')));
+const missingExample=rows.filter(r=>!String(read(r,'example',5)||r?.sentence||'').trim());
+const missingExampleThai=rows.filter(r=>!/[ก-๙]/.test(String(read(r,'exampleThai',6)||r?.example_thai||r?.sentenceThai||'')));
 assert.equal(missingWord.length,0,`Rows without word: ${missingWord.length}`);
 assert.equal(missingThai.length,0,`Rows without Thai translation: ${missingThai.length}`);
+assert.equal(missingExample.length,0,`Rows without example: ${missingExample.length}`);
+assert.equal(missingExampleThai.length,0,`Rows without Thai example: ${missingExampleThai.length}`);
 const ids=rows.map((r,i)=>read(r,'id',0)??i+1);
 assert.equal(new Set(ids).size,3000,'Oxford IDs are not unique');
 
@@ -39,4 +43,4 @@ assert(chapters.every(c=>c.length===300),'Each story must contain 300 target ent
 assert.equal(chapters.flat().length,3000,'Stories must cover 3000 entries');
 assert.equal(new Set(chapters.flat().map((r,i)=>read(r,'id',0)??i+1)).size,3000,'Story distribution repeats an Oxford entry');
 
-console.log(JSON.stringify({ok:true,rows:rows.length,thaiTranslations:rows.length-missingThai.length,syntaxFiles:jsFiles.length,stories:chapters.length,wordsPerStory:300},null,2));
+console.log(JSON.stringify({ok:true,rows:rows.length,thaiTranslations:rows.length-missingThai.length,examples:rows.length-missingExample.length,thaiExamples:rows.length-missingExampleThai.length,syntaxFiles:jsFiles.length,stories:chapters.length,wordsPerStory:300},null,2));

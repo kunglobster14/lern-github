@@ -1,4 +1,5 @@
 (()=>{
+  const VERSION='v61';
   const KEYS=['myEnglishV2','myEnglishCompleteCourseV1','myEnglishLearningPathV1'];
   const PROFILE_STORE='myEnglishLocalProfilesV1';
   const ACTIVE_PROFILE='myEnglishActiveProfileV1';
@@ -48,17 +49,23 @@
   function overlay(s){
     document.querySelector('#accountOverlay')?.remove();
     const el=document.createElement('div');el.className='account-overlay';el.id='accountOverlay';
-    el.innerHTML=`<section class="account-card"><div class="account-logo">M</div>${s.databaseMode==='temporary'?'<span class="account-test">TEMP DATABASE TEST</span>':''}<h1>เข้าสู่ระบบผู้เรียน</h1><p>เข้าสู่บัญชีก่อนเริ่มเรียน เพื่อไม่ให้บทเรียนและความคืบหน้าของผู้เรียนแต่ละคนสับสนกัน</p><label class="account-field"><span>Username</span><input id="aUser" autocomplete="username" autofocus></label><label class="account-field"><span>Password</span><input id="aPass" type="password" autocomplete="current-password"></label><div class="account-error" id="aError"></div><div class="account-actions"><button class="account-primary" id="aLogin">เข้าสู่ระบบ</button></div><p class="account-note">หากยังไม่มีบัญชี กรุณาให้ผู้ดูแลสร้างบัญชีผู้เรียนให้ · ไม่มีการสมัครสมาชิกจากหน้านี้</p></section>`;
+    el.innerHTML=`<section class="account-login-shell"><div class="account-login-brand"><div class="account-logo">M</div><div><span class="account-kicker">MY ENGLISH COACH</span><h1>เข้าสู่ระบบผู้เรียน</h1><p>ผู้เรียนแต่ละคนใช้บัญชีของตัวเอง ความคืบหน้า ระดับ บทเรียน เกม และ Oxford จะไม่ปะปนกัน</p></div></div><div class="account-login-points"><span>✓ โปรไฟล์แยกคน</span><span>✓ บันทึกความคืบหน้าแยกบัญชี</span><span>✓ เรียนต่อจากอุปกรณ์อื่นได้</span></div></section><section class="account-card account-login-card">${s.databaseMode==='temporary'?'<span class="account-test">TEMP DATABASE TEST</span>':''}<div class="account-card-head"><small>LEARNER LOGIN</small><h2>เข้าโปรไฟล์ของคุณ</h2><p>กรอก Username และ Password ที่ผู้ดูแลสร้างให้</p></div><label class="account-field"><span>Username</span><input id="aUser" autocomplete="username" autocapitalize="none" spellcheck="false" autofocus placeholder="เช่น kung01"></label><label class="account-field"><span>Password</span><div class="account-password-wrap"><input id="aPass" type="password" autocomplete="current-password" placeholder="รหัสผ่านอย่างน้อย 8 ตัว"><button id="aShowPass" type="button" aria-label="แสดงหรือซ่อนรหัสผ่าน">แสดง</button></div></label><div class="account-error" id="aError"></div><div class="account-actions"><button class="account-primary" id="aLogin">เข้าสู่โปรไฟล์ของฉัน</button></div><div class="account-separate-note"><b>บัญชีแยกจากกัน</b><span>เมื่อออกจากระบบ ข้อมูลของผู้เรียนคนนี้จะถูกซิงก์ก่อน แล้วผู้เรียนคนถัดไปจึง Login ด้วยบัญชีของตัวเอง</span></div><p class="account-note">ยังไม่มีบัญชี? ให้ผู้ดูแลกดเมนู “ผู้เรียน” แล้วสร้าง Username และ Password ให้ · ไม่มีปุ่มสมัครสมาชิกจากหน้านี้</p></section>`;
     document.body.appendChild(el);
+    const user=el.querySelector('#aUser'),pass=el.querySelector('#aPass'),login=el.querySelector('#aLogin'),show=el.querySelector('#aShowPass');
+    show.onclick=()=>{const visible=pass.type==='text';pass.type=visible?'password':'text';show.textContent=visible?'แสดง':'ซ่อน';pass.focus()};
     const submit=async()=>{
-      const e=el.querySelector('#aError');e.textContent='กำลังเข้าสู่ระบบ...';
-      const payload={action:'login',username:el.querySelector('#aUser').value.trim(),password:el.querySelector('#aPass').value};
+      const e=el.querySelector('#aError');
+      if(!user.value.trim()){e.textContent='กรุณากรอก Username';user.focus();return}
+      if(!pass.value){e.textContent='กรุณากรอก Password';pass.focus();return}
+      login.disabled=true;login.textContent='กำลังเข้าสู่ระบบ...';e.textContent='กำลังตรวจสอบบัญชี...';
+      const payload={action:'login',username:user.value.trim(),password:pass.value};
       const {r,d}=await api({method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}).catch(()=>({r:{ok:false},d:{}}));
-      if(!r.ok){e.textContent=errorText(d.error);return}
+      if(!r.ok){e.textContent=errorText(d.error);login.disabled=false;login.textContent='เข้าสู่โปรไฟล์ของฉัน';return}
+      e.textContent='เข้าสู่ระบบสำเร็จ กำลังเปิดโปรไฟล์...';
       clear();sessionStorage.clear();location.reload();
     };
-    el.querySelector('#aLogin').onclick=submit;
-    el.querySelector('#aPass').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submit()}});
+    login.onclick=submit;
+    [user,pass].forEach(input=>input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submit()}}));
   }
 
   function unavailable(message){
@@ -77,13 +84,19 @@
 
   function decorate(){
     const top=document.querySelector('.top-actions');if(!top)return;
-    const n=document.querySelector('#profileName');if(n){n.textContent='ผู้เรียน';n.title=status?.user?.displayName||'ผู้เรียน'}
-    const profileBtn=document.querySelector('#profileBtn');if(profileBtn)profileBtn.setAttribute('aria-label',status?.user?.displayName?`ผู้เรียน: ${status.user.displayName}`:'ผู้เรียน');
+    const displayName=status?.user?.displayName||status?.user?.username||'ผู้เรียน';
+    const n=document.querySelector('#profileName');if(n){n.textContent=displayName;n.title=`โปรไฟล์ของ ${displayName}`}
+    const profileBtn=document.querySelector('#profileBtn');if(profileBtn)profileBtn.setAttribute('aria-label',`ผู้เรียน: ${displayName}`);
+    if(!document.querySelector('#accountIdentity')){
+      const tag=document.createElement('span');tag.id='accountIdentity';tag.className='account-identity';tag.textContent=`@${status?.user?.username||'learner'}`;top.insertBefore(tag,profileBtn||null);
+    }
     if(!document.querySelector('#accountLogout')){
-      const b=document.createElement('button');b.id='accountLogout';b.className='account-top-btn';b.type='button';b.textContent='ออกจากบัญชี';b.setAttribute('aria-label','ออกจากบัญชีผู้เรียน');b.onclick=logout;top.appendChild(b);
+      const b=document.createElement('button');b.id='accountLogout';b.className='account-top-btn';b.type='button';b.textContent='ออกจากบัญชี';b.setAttribute('aria-label',`ออกจากบัญชี ${displayName}`);b.onclick=logout;top.appendChild(b);
     }
     const localTools=document.querySelector('.local-tools');if(localTools)localTools.style.display='none';
-    const intro=document.querySelector('#profileDialog .dialog-card > p');if(intro)intro.textContent='หลักสูตรและความคืบหน้าบันทึกแยกตามบัญชีผู้เรียน และซิงก์ผ่านฐานข้อมูล';
+    const intro=document.querySelector('#profileDialog .dialog-card > p');if(intro)intro.textContent=`กำลังใช้งานโปรไฟล์ ${displayName} · หลักสูตรและความคืบหน้าซิงก์แยกจากผู้เรียนคนอื่น`;
+    const nameInput=document.querySelector('#nameInput');if(nameInput){nameInput.value=displayName;nameInput.disabled=true}
+    const nameLabel=document.querySelector('label[for="nameInput"]');if(nameLabel)nameLabel.textContent='ชื่อบัญชีผู้เรียน';
     ['exportBackupBtn','importBackupBtn'].forEach(id=>{const el=document.querySelector('#'+id);if(el)el.style.display='none'});
   }
 
@@ -98,4 +111,5 @@
     lastRaw=rawSnap();unlockApp();decorate();watch();
   }
   boot();
+  window.ACCOUNT_GATE_VERSION=VERSION;
 })();

@@ -1,9 +1,9 @@
-const CACHE='my-english-v52';
+const CACHE='my-english-v53';
 const ASSETS=[
-  './','./index.html','./styles.css?v=33','./enhancements.css?v=33','./game-lab-v31.css?v=33','./learning-path.css?v=33','./learning-guide.css?v=33','./core3000-plan.css?v=46','./core3000-study.css?v=46','./core3000-library.css?v=46','./oxford3000-extra.css?v=46','./oxford3000-story-v46.css?v=46','./complete-course.css?v=33','./account-gate.css?v=49','./sentence-coach.css?v=51',
-  './app.js?v=33','./learner-level.js?v=50','./enhancements.js?v=33','./content-pack.js?v=33','./game-lab-v31.js?v=33','./learning-path.js?v=33','./learning-guide.js?v=52','./sentence-coach.js?v=51','./adaptive-learning-v52.js?v=52',
+  './','./index.html','./styles.css?v=33','./enhancements.css?v=33','./game-lab-v31.css?v=33','./learning-path.css?v=33','./learning-guide.css?v=33','./core3000-plan.css?v=46','./core3000-study.css?v=46','./core3000-library.css?v=46','./oxford3000-extra.css?v=46','./oxford3000-story-v46.css?v=46','./complete-course.css?v=33','./account-gate.css?v=53',
+  './app.js?v=33','./account-gate.js?v=53','./account-admin.js?v=33','./learner-level-v53.js?v=53','./enhancements.js?v=33','./content-pack.js?v=33','./game-lab-v31.js?v=33','./spell-feedback-v34.js?v=34','./translate-audio-v35.js?v=35','./builder-feedback-v36.js?v=36','./learning-path.js?v=33','./learning-guide.js?v=52',
   './oxford3000-pack-01.js?v=46','./oxford3000-pack-02.js?v=46','./oxford3000-pack-03.js?v=46','./oxford3000-pack-03b.js?v=46','./oxford3000-pack-04.js?v=46','./oxford3000-pack-05.js?v=46','./oxford3000-pack-06.js?v=46','./oxford3000-pack-07.js?v=46','./oxford3000-pack-08.js?v=46','./oxford3000-loader.js?v=46','./oxford3000-core.js?v=46','./core3000-study.js?v=50','./core3000-library.js?v=46','./oxford3000-practice.js?v=50','./oxford3000-stories.js?v=46','./oxford3000-story-upgrade.js?v=49','./oxford3000-story-speed.js?v=48','./core3000-plan.js?v=46',
-  './learning-ui-v37.js?v=37','./complete-course.js?v=33','./vocab-unify.js?v=33','./account-gate.js?v=49','./account-admin.js?v=33','./manifest.webmanifest?v=46','./icon.svg'
+  './learning-ui-v37.js?v=37','./complete-course.js?v=33','./vocab-unify.js?v=33','./daily-course-v53.js?v=53','./sentence-coach-v53.js?v=53','./adaptive-games-v53.js?v=53','./manifest.webmanifest?v=46','./icon.svg'
 ];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()))});

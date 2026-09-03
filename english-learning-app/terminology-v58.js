@@ -3,15 +3,15 @@
   const term=text=>String(text??'')
     .replace(/ดูบทเรียน\s+(?:DAY|Day)\s+(\d+)\b/g,'ดูบทเรียนที่ $1')
     .replace(/เลือก\s+(?:DAY|Day)\b/g,'เลือกบทเรียน')
-    .replace(/เรียน\s+(?:DAY|Day)\s+นี้\b/g,'เรียนบทเรียนนี้')
-    .replace(/ผ่าน\s+(?:DAY|Day)\s+นี้\b/g,'ผ่านบทเรียนนี้')
-    .replace(/ของ\s+(?:DAY|Day)\s+นี้\b/g,'ของบทเรียนนี้')
+    .replace(/เรียน\s+(?:DAY|Day)\s+นี้/g,'เรียนบทเรียนนี้')
+    .replace(/ผ่าน\s+(?:DAY|Day)\s+นี้/g,'ผ่านบทเรียนนี้')
+    .replace(/ของ\s+(?:DAY|Day)\s+นี้/g,'ของบทเรียนนี้')
     .replace(/\b(?:DAY|Day)\s+(\d+)\s*[–-]\s*(\d+)\b/g,'บทเรียนที่ $1–$2')
     .replace(/\b(?:DAY|Day)\s+(\d+)\b/g,'บทเรียนที่ $1')
-    .replace(/\b(?:DAY|Day)\s+ถัดไป\b/g,'บทเรียนถัดไป')
-    .replace(/\b(?:DAY|Day)\s+ปัจจุบัน\b/g,'บทเรียนปัจจุบัน')
-    .replace(/\b(?:DAY|Day)\s+นี้\b/g,'บทเรียนนี้')
-    .replace(/\b(?:DAY|Day)\s+ของ\b/g,'บทเรียนของ')
+    .replace(/\b(?:DAY|Day)\s+ถัดไป/g,'บทเรียนถัดไป')
+    .replace(/\b(?:DAY|Day)\s+ปัจจุบัน/g,'บทเรียนปัจจุบัน')
+    .replace(/\b(?:DAY|Day)\s+นี้/g,'บทเรียนนี้')
+    .replace(/\b(?:DAY|Day)\s+ของ/g,'บทเรียนของ')
     .replace(/\b(?:DAY|Day)\b/g,'บทเรียน');
 
   const SKIP=new Set(['SCRIPT','STYLE','TEXTAREA','CODE','PRE']);

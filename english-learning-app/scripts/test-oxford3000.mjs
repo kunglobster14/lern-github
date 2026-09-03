@@ -30,7 +30,7 @@ assert.equal(missingExampleThai.length,0,`Rows without Thai example: ${missingEx
 const ids=rows.map((r,i)=>read(r,'id',0)??i+1);
 assert.equal(new Set(ids).size,3000,'Oxford IDs are not unique');
 
-const jsFiles=['learner-level.js','sentence-coach.js','oxford3000-loader.js','oxford3000-core.js','core3000-study.js','core3000-library.js','oxford3000-practice.js','oxford3000-stories.js','oxford3000-story-upgrade.js','oxford3000-story-speed.js','core3000-plan.js','account-gate.js'];
+const jsFiles=['learner-level.js','sentence-coach.js','adaptive-learning-v52.js','learning-guide.js','oxford3000-loader.js','oxford3000-core.js','core3000-study.js','core3000-library.js','oxford3000-practice.js','oxford3000-stories.js','oxford3000-story-upgrade.js','oxford3000-story-speed.js','core3000-plan.js','account-gate.js'];
 for(const file of jsFiles){
   const check=spawnSync(process.execPath,['--check',path.join(root,file)],{encoding:'utf8'});
   assert.equal(check.status,0,`${file} syntax error:\n${check.stderr||check.stdout}`);
@@ -81,6 +81,22 @@ assert(sentenceSource.includes('task.explain'),'Grammar explanation feedback is 
 assert(sentenceSource.includes('sentenceCoach'),'Sentence progress must be stored without overwriting existing progress');
 assert(!sentenceSource.includes("fetch('/api/ai'"),'Sentence coach must not call AI API');
 
+const adaptiveSource=fs.readFileSync(path.join(root,'adaptive-learning-v52.js'),'utf8');
+assert(adaptiveSource.includes("const VERSION='v52'"),'Adaptive learning version is missing');
+for(const route of ["starter:{label:'เริ่มต้น'","basic:{label:'พื้นฐาน'","intermediate:{label:'กลาง'","upper:{label:'กลางสูง'"])assert(adaptiveSource.includes(route),`Missing adaptive course ${route}`);
+assert(adaptiveSource.includes("path:['L2','L3','L4','L5']"),'A2-B1 course must continue from L2 through L5');
+assert(adaptiveSource.includes("path:['L4','L5']"),'B1-B2 course must continue from L4 through L5');
+assert(adaptiveSource.includes('filterOxfordByLearnerLevel'),'Adaptive games must use CEFR-filtered Oxford words');
+for(const type of ['match','builder','listen','sprint','rush','gap','translate','memory','dialog','spell','trap'])assert(adaptiveSource.includes(`${type}:`)||adaptiveSource.includes(`'${type}'`),`Adaptive game missing ${type}`);
+assert(adaptiveSource.includes("window.__gameLabV31?.addProgress?.('game',1)"),'Adaptive games must preserve game quest progress');
+assert(adaptiveSource.includes('บทในหลักสูตรของคุณ'),'Roadmap progress must be recalculated for the selected course path');
+
+const guideSource=fs.readFileSync(path.join(root,'learning-guide.js'),'utf8');
+assert(guideSource.includes('Sentence Coach 5–10 นาที'),'Guide must use Sentence Coach');
+assert(guideSource.includes('Quiz หรือ Game ตามระดับ'),'Guide must explain level-aware games');
+assert(guideSource.includes('เป้าหมายคือสื่อสารต่อเนื่องระดับกลางถึงสูง'),'Guide must state the communication target');
+assert(!guideSource.includes('AI Coach'),'Guide must not reference AI Coach');
+
 const accountSource=fs.readFileSync(path.join(root,'account-gate.js'),'utf8');
 assert(accountSource.includes("classList.add('account-locked')"),'Login gate must lock lessons before authentication');
 assert(accountSource.includes("if(!d.authenticated){overlay(d);return}"),'Unauthenticated learners must see login only');
@@ -89,6 +105,8 @@ const indexSource=fs.readFileSync(path.join(root,'index.html'),'utf8');
 assert(indexSource.includes("document.documentElement.classList.add('account-locked')"),'Index must hide lessons before scripts render');
 assert(indexSource.includes('learner-level.js?v=50'),'Learner level asset is not loaded');
 assert(indexSource.includes('sentence-coach.js?v=51'),'Sentence coach asset is not loaded');
+assert(indexSource.includes('adaptive-learning-v52.js?v=52'),'Adaptive learning asset is not loaded');
+assert(indexSource.includes('learning-guide.js?v=52'),'Adaptive guide cache version is stale');
 assert(indexSource.includes('sentence-coach.css?v=51'),'Sentence coach stylesheet is not loaded');
 assert(indexSource.includes('core3000-study.js?v=50'),'Level-aware daily study cache version is stale');
 assert(indexSource.includes('oxford3000-practice.js?v=50'),'Level-aware quiz cache version is stale');
@@ -99,8 +117,9 @@ assert(indexSource.includes('LOCAL · Sentence Coach'),'Local sentence mode badg
 assert(indexSource.includes('>แต่งประโยค</span>'),'Bottom navigation must use Sentence Coach instead of AI Coach');
 
 const swSource=fs.readFileSync(path.join(root,'sw.js'),'utf8');
-assert(swSource.includes("const CACHE='my-english-v51'"),'Service worker cache must be v51');
+assert(swSource.includes("const CACHE='my-english-v52'"),'Service worker cache must be v52');
+assert(swSource.includes('./adaptive-learning-v52.js?v=52'),'Adaptive learning must be available offline');
+assert(swSource.includes('./learning-guide.js?v=52'),'Adaptive guide must be available offline');
 assert(swSource.includes('./sentence-coach.js?v=51'),'Sentence coach must be available offline');
-assert(swSource.includes('./sentence-coach.css?v=51'),'Sentence coach stylesheet must be available offline');
 
-console.log(JSON.stringify({ok:true,rows:rows.length,thaiTranslations:rows.length-missingThai.length,examples:rows.length-missingExample.length,thaiExamples:rows.length-missingExampleThai.length,syntaxFiles:jsFiles.length,stories:chapters.length,wordsPerStory:WORDS_PER_STORY,extendedStories:10,extraSentencesPerExtendedStory:10,loginRequired:true,learnerLevels:4,progressPreserved:true,levelAwareOxford:true,aiLearningUI:false,sentenceCoach:true,sentenceTasks:32,localSentenceCorrection:true,narration:true,narrationSpeeds:['slow','medium','fast']},null,2));
+console.log(JSON.stringify({ok:true,rows:rows.length,thaiTranslations:rows.length-missingThai.length,examples:rows.length-missingExample.length,thaiExamples:rows.length-missingExampleThai.length,syntaxFiles:jsFiles.length,stories:chapters.length,wordsPerStory:WORDS_PER_STORY,extendedStories:10,extraSentencesPerExtendedStory:10,loginRequired:true,learnerLevels:4,progressPreserved:true,levelAwareOxford:true,adaptiveCurriculum:true,adaptiveGames:true,targetCommunication:'intermediate-to-upper',aiLearningUI:false,sentenceCoach:true,sentenceTasks:32,localSentenceCorrection:true,narration:true,narrationSpeeds:['slow','medium','fast']},null,2));

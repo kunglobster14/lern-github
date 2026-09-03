@@ -24,9 +24,12 @@ assert.equal(t('หลักสูตรระดับนี้ 2/140 Day'),'�
 assert.equal(t('Yesterday I went to work.'),'Yesterday I went to work.');
 assert.equal(t('I study every day.'),'I study every day.');
 const index=fs.readFileSync('index.html','utf8');
-assert(index.includes('terminology-v58.js?v=58'),'Index must load terminology v58 last');
+assert(index.includes('terminology-v58.js?v=58'),'Index must load terminology v58');
+assert(index.includes('course-game-fixes-v59.js?v=59'),'Index must load v59 after terminology');
+assert(index.indexOf('course-game-fixes-v59.js?v=59')>index.indexOf('terminology-v58.js?v=58'),'v59 must load after terminology v58');
 assert(index.includes('LOCAL · 210 บทเรียน'),'Top badge must use Thai lesson terminology');
 const sw=fs.readFileSync('sw.js','utf8');
-assert(sw.includes("const CACHE='my-english-v56'"),'Service worker cache compatibility changed unexpectedly');
+assert(sw.includes("const CACHE='my-english-v59'"),'Service worker cache must be v59');
 assert(sw.includes('./terminology-v58.js?v=58'),'Service worker must cache terminology v58');
-console.log(JSON.stringify({ok:true,version:'v58',dayUiRemoved:true,examples:['บทเรียนที่ 1','เลือกบทเรียน','บทเรียนถัดไป']},null,2));
+assert(sw.includes('./course-game-fixes-v59.js?v=59'),'Service worker must cache v59 fixes');
+console.log(JSON.stringify({ok:true,version:'v58',dayUiRemoved:true,examples:['บทเรียนที่ 1','เลือกบทเรียน','บทเรียนถัดไป'],compatibleWith:'v59'},null,2));

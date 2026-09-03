@@ -37,10 +37,18 @@ for(const file of jsFiles){
 }
 
 function shuffle(arr,seed){const a=[...arr];let x=seed;const rnd=()=>{x=(x*1664525+1013904223)>>>0;return x/4294967296};for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-const storyRows=shuffle(rows,300043);
-const chapters=Array.from({length:10},(_,i)=>storyRows.slice(i*300,(i+1)*300));
-assert(chapters.every(c=>c.length===300),'Each story must contain 300 target entries');
+const STORY_COUNT=25,WORDS_PER_STORY=120;
+const storyRows=shuffle(rows,300046);
+const chapters=Array.from({length:STORY_COUNT},(_,i)=>storyRows.slice(i*WORDS_PER_STORY,(i+1)*WORDS_PER_STORY));
+assert(chapters.every(c=>c.length===WORDS_PER_STORY),`Each story must contain ${WORDS_PER_STORY} target entries`);
 assert.equal(chapters.flat().length,3000,'Stories must cover 3000 entries');
 assert.equal(new Set(chapters.flat().map((r,i)=>read(r,'id',0)??i+1)).size,3000,'Story distribution repeats an Oxford entry');
 
-console.log(JSON.stringify({ok:true,rows:rows.length,thaiTranslations:rows.length-missingThai.length,examples:rows.length-missingExample.length,thaiExamples:rows.length-missingExampleThai.length,syntaxFiles:jsFiles.length,stories:chapters.length,wordsPerStory:300},null,2));
+const storySource=fs.readFileSync(path.join(root,'oxford3000-stories.js'),'utf8');
+assert.match(storySource,/const STORY_COUNT=25;/,'Story count constant must be 25');
+assert.match(storySource,/const WORDS_PER_STORY=120;/,'Words per story constant must be 120');
+assert.equal((storySource.match(/title:`/g)||[]).length,25,'Expected exactly 25 authored story titles');
+for(const control of ['storyReadAll','storyPause','storyStop'])assert(storySource.includes(control),`Missing narration control ${control}`);
+assert(storySource.includes('SpeechSynthesisUtterance'),'Whole-story speech synthesis is missing');
+
+console.log(JSON.stringify({ok:true,rows:rows.length,thaiTranslations:rows.length-missingThai.length,examples:rows.length-missingExample.length,thaiExamples:rows.length-missingExampleThai.length,syntaxFiles:jsFiles.length,stories:chapters.length,wordsPerStory:WORDS_PER_STORY,narration:true},null,2));

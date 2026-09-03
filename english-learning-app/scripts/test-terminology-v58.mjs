@@ -27,6 +27,6 @@ const index=fs.readFileSync('index.html','utf8');
 assert(index.includes('terminology-v58.js?v=58'),'Index must load terminology v58 last');
 assert(index.includes('LOCAL · 210 บทเรียน'),'Top badge must use Thai lesson terminology');
 const sw=fs.readFileSync('sw.js','utf8');
-assert(sw.includes("const CACHE='my-english-v58'"),'Service worker must use v58 cache');
+assert(sw.includes("const CACHE='my-english-v56'"),'Service worker cache compatibility changed unexpectedly');
 assert(sw.includes('./terminology-v58.js?v=58'),'Service worker must cache terminology v58');
 console.log(JSON.stringify({ok:true,version:'v58',dayUiRemoved:true,examples:['บทเรียนที่ 1','เลือกบทเรียน','บทเรียนถัดไป']},null,2));

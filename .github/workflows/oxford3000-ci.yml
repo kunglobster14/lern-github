@@ -1,0 +1,25 @@
+name: Oxford 3000 validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'english-learning-app/**'
+      - '.github/workflows/oxford3000-ci.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: english-learning-app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Validate Oxford 3000 data and JavaScript
+        run: node scripts/test-oxford3000.mjs

@@ -45,7 +45,9 @@
   function write(v){localStorage.setItem(PATH_KEY,JSON.stringify(v))}
   function isDone(id){return read().done.includes(id)}
   function toggleDone(id){const s=read();s.done=isDone(id)?s.done.filter(x=>x!==id):[...s.done,id];write(s);renderRoadmap();}
+  function markDone(id){if(isDone(id))return;const s=read();s.done=[...s.done,id];write(s);renderRoadmap();}
   function allUnits(){return levels.flatMap(l=>l.units)}
+  function levelOfUnit(id){return levels.find(l=>l.units.some(u=>u.id===id))}
   function percent(){const done=read().done.length,total=allUnits().length;return Math.round(done/total*100)}
 
   function roadmapHtml(){
@@ -69,7 +71,15 @@
 
   function openUnit(id){const u=allUnits().find(x=>x.id===id);if(!u)return;const root=modal(`📘 ${esc(u.title)}`,`<div class="lesson-sheet"><div class="lesson-focus">${esc(u.focus)}</div><div class="pattern-box"><small>PATTERN</small><b>${esc(u.pattern)}</b></div><div class="example-stack">${u.examples.map(e=>`<button class="example-line" data-say="${esc(e[0])}"><span><b>${esc(e[0])}</b><small>${esc(e[1])}</small></span><em>🔊</em></button>`).join('')}</div><div class="path-actions"><button id="unitDone" class="lab-secondary">${isDone(u.id)?'✓ เรียนแล้ว':'ทำเครื่องหมายว่าเรียนแล้ว'}</button><button id="unitAI" class="lab-primary">ฝึกต่อกับ AI Coach</button></div></div>`);
     root.querySelectorAll('[data-say]').forEach(b=>b.onclick=()=>{try{if(typeof speak==='function')speak(b.dataset.say)}catch{}});
-    root.querySelector('#unitDone').onclick=()=>{toggleDone(u.id);root.remove()};
+    root.querySelector('#unitDone').onclick=()=>{
+      markDone(u.id);
+      const l=levelOfUnit(u.id);
+      if(!l){root.remove();return}
+      const i=l.units.findIndex(x=>x.id===u.id);
+      const next=l.units.slice(i+1).find(x=>!isDone(x.id))||l.units.find(x=>!isDone(x.id));
+      if(next){openUnit(next.id);return}
+      openLevel(l.id);
+    };
     root.querySelector('#unitAI').onclick=()=>{try{state.pendingMission={text:`Lesson: ${u.title}`,thai:u.focus,prompt:u.ai};state.chat=[{role:'ai',text:`🎯 Lesson Mission: ${u.ai}`,thai:`บท ${u.title} · ${u.focus}`}];saveState();root.remove();go('ai')}catch{root.remove()}};
   }
 

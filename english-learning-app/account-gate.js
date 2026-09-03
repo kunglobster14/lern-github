@@ -2,11 +2,13 @@
   const KEYS=['myEnglishV2','myEnglishCompleteCourseV1','myEnglishLearningPathV1'];
   const PROFILE_STORE='myEnglishLocalProfilesV1';
   const ACTIVE_PROFILE='myEnglishActiveProfileV1';
-  let status=null,enabled=false,last='',timer=null;
+  let status=null,enabled=false,lastRaw=null,timer=null,watchId=null;
   document.documentElement.classList.add('account-locked');
   const unlockApp=()=>document.documentElement.classList.remove('account-locked');
   const api=async(options={})=>{const r=await fetch(options.url||'/api/account',{cache:'no-store',credentials:'same-origin',...options});const d=await r.json().catch(()=>({}));return{r,d}};
-  const snap=()=>{const o={};KEYS.forEach(k=>{const v=localStorage.getItem(k);if(v!==null){try{o[k]=JSON.parse(v)}catch{o[k]=v}}});return o};
+  const rawSnap=()=>KEYS.map(k=>localStorage.getItem(k));
+  const sameRaw=(a,b)=>Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.every((v,i)=>v===b[i]);
+  const parseRaw=raw=>{const o={};KEYS.forEach((k,i)=>{const v=raw[i];if(v!==null){try{o[k]=JSON.parse(v)}catch{o[k]=v}}});return o};
   const clear=()=>KEYS.forEach(k=>localStorage.removeItem(k));
   function mirrorLegacyProfile(){
     try{
@@ -22,9 +24,26 @@
   const apply=o=>{clear();Object.entries(o||{}).forEach(([k,v])=>{if(KEYS.includes(k))localStorage.setItem(k,typeof v==='string'?v:JSON.stringify(v))});mirrorLegacyProfile()};
   const errorText=c=>({invalid_credentials:'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง',invalid_username:'Username ต้องยาว 3–30 ตัว และใช้ตัวอักษร ตัวเลข จุด ขีด หรือ _',invalid_password:'Password ต้องมีอย่างน้อย 8 ตัวอักษร',username_taken:'Username นี้ถูกใช้แล้ว',registration_closed:'ปิดการสมัครแล้ว ให้ผู้ดูแลสร้างบัญชีให้',user_limit_reached:'มีผู้เรียนครบ 10 คนแล้ว'}[c]||'เกิดข้อผิดพลาด กรุณาลองใหม่');
 
-  async function pull(){const {r,d}=await api({url:'/api/state'});if(r.ok){apply(d.state||{});last=JSON.stringify(snap())}}
-  async function push(force=false){if(!enabled||!status?.authenticated)return;const text=JSON.stringify(snap());if(!force&&text===last)return;last=text;await api({url:'/api/state',method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({state:JSON.parse(text)}),keepalive:true}).catch(()=>{})}
-  function watch(){setInterval(()=>{if(JSON.stringify(snap())!==last){clearTimeout(timer);timer=setTimeout(()=>push(),900)}},1400);window.addEventListener('pagehide',()=>push(true));}
+  async function pull(){const {r,d}=await api({url:'/api/state'});if(r.ok){apply(d.state||{});lastRaw=rawSnap()}}
+  async function push(force=false){
+    if(!enabled||!status?.authenticated)return;
+    const raw=rawSnap();
+    if(!force&&sameRaw(raw,lastRaw))return;
+    lastRaw=raw;
+    await api({url:'/api/state',method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({state:parseRaw(raw)}),keepalive:true}).catch(()=>{});
+  }
+  function watch(){
+    if(watchId)return;
+    watchId=setInterval(()=>{
+      const raw=rawSnap();
+      if(!sameRaw(raw,lastRaw)){
+        clearTimeout(timer);
+        timer=setTimeout(()=>push(),1200);
+      }
+    },5000);
+    window.addEventListener('pagehide',()=>push(true),{passive:true});
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')push(true)});
+  }
 
   function overlay(s){
     document.querySelector('#accountOverlay')?.remove();
@@ -76,7 +95,7 @@
     if(!d.authenticated){overlay(d);return}
     const m=`myEnglishHydrated:${d.user.id}`;
     if(!sessionStorage.getItem(m)){await pull();sessionStorage.setItem(m,'1');location.reload();return}
-    last=JSON.stringify(snap());unlockApp();decorate();watch();
+    lastRaw=rawSnap();unlockApp();decorate();watch();
   }
   boot();
 })();

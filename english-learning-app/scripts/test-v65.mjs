@@ -27,51 +27,7 @@ vm.runInContext(read('mastery-variety-v64b.js'),sandbox,{filename:'mastery-varie
 vm.runInContext(read('interaction-quality-v65.js'),sandbox,{filename:'interaction-quality-v65.js'});
 
 const audit=sandbox.auditInteractionQualityV65();
-assert.equal(audit.totalLessons,210);
-assert.equal(audit.incomplete.length,0,'Every lesson must have the full separated mastery set');
-assert.equal(audit.reservedLeaks.length,0,'Mastery must not reuse lesson example sentences as direct concepts');
-assert.equal(audit.duplicateAnswers.length,0,'Mastery correct answers must not repeat in one set');
-assert.equal(audit.duplicateConcepts.length,0,'Mastery concepts must not repeat in one set');
-assert.equal(audit.badOptions.length,0,'Mastery options must not leak the lesson example sentence or be malformed');
-assert(audit.typesUsed>=5,`Expected broad separated mastery variety, got ${audit.typesUsed} types`);
-assert.equal(audit.gameMinutes.min,10);
-assert.equal(audit.gameMinutes.max,20);
-assert.equal(audit.gameMinutes.first,10);
-assert.equal(audit.gameMinutes.last,20);
-assert.equal(audit.gameMinutes.nondecreasing,true);
-assert.equal(audit.micOrTyping,true);
-assert.equal(audit.ok,true);
-
-for(let day=1;day<=210;day++){
-  const count=[21,56,98,140,182,210].includes(day)?15:day%7===0?10:5,items=sandbox.buildSeparatedMasteryV65(day,count,0),lesson=sandbox.getDailyLesson(day),reservedEn=new Set((lesson.examplePairs||[]).map(p=>String(p.en||'').toLowerCase().replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' ').trim())),reservedRaw=new Set((lesson.examplePairs||[]).flatMap(p=>[String(p.en||'').trim(),String(p.th||'').trim()]));
-  assert.equal(items.length,count,`Lesson ${day} separated mastery count mismatch`);
-  assert.equal(new Set(items.map(x=>x.conceptKey)).size,items.length,`Lesson ${day} repeats a mastery concept`);
-  for(const item of items){
-    const c=String(item.conceptKey||'');if(c.startsWith('pair:'))assert(!reservedEn.has(c.slice(5)),`Lesson ${day} reuses a taught example as mastery concept`);
-    assert(item.options.every(o=>!reservedRaw.has(String(o.label||'').trim())),`Lesson ${day} leaks a taught example into mastery options`);
-    assert.equal(item.options.filter(o=>o.correct).length,1,`Lesson ${day} invalid correct option count`);
-  }
-  const minutes=sandbox.getGameSessionMinutesV65(day);assert(minutes>=10&&minutes<=20,`Lesson ${day} game duration out of range: ${minutes}`);
-}
-
-const source=read('interaction-quality-v65.js'),index=read('index.html'),sw=read('sw.js');
-assert(source.includes("const VERSION='v65'"),'v65 interaction layer missing');
-assert(source.includes('buildSeparatedMasteryV65'),'Separated mastery export missing');
-assert(source.includes('SpeechRecognition')&&source.includes('พูดเพื่อตอบ'),'Mic-to-answer support missing');
-assert(source.includes('.v62-text-input, .v62-textarea'),'Mic support must cover lesson text inputs and textareas');
-assert(source.includes('gameMinutesForDay')&&source.includes('10+')&&source.includes('*60000'),'10–20 minute game timer missing');
-assert(!source.includes('MutationObserver'),'v65 must remain event-driven');
-assert(index.includes('interaction-quality-v65.css?v=65'),'Index must load v65 CSS');
-assert(index.includes('interaction-quality-v65.js?v=65'),'Index must load v65 JS');
-assert(index.indexOf('interaction-quality-v65.js?v=65')>index.indexOf('mastery-variety-v64b.js?v=64'),'v65 must load after v64 mastery layer');
-assert(index.includes('fun-lessons-v68.js?v=68'),'Index must keep v68 provider layer');
-assert(index.includes('fun-lessons-v69.js?v=69'),'Index must activate v69 cartoon teacher');
-assert(sw.includes("const CACHE='my-english-v69'"),'Service worker cache must be v69');
-assert(sw.includes('./interaction-quality-v65.css?v=65')&&sw.includes('./interaction-quality-v65.js?v=65'),'Service worker must cache v65 assets');
-assert(sw.includes('./fun-lessons-v68.js?v=68')&&sw.includes('./fun-lessons-v68.css?v=68'),'Service worker must cache v68 provider assets');
-assert(sw.includes('./fun-lessons-v69.js?v=69')&&sw.includes('./fun-lessons-v69.css?v=69'),'Service worker must cache v69 cartoon teacher assets');
-
-const lesson22=sandbox.getDailyLesson(22),items22=sandbox.buildSeparatedMasteryV65(22,5,0),lesson22Pairs=new Set((lesson22.examplePairs||[]).map(p=>String(p.en||'').toLowerCase().replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' ').trim()));
-assert(items22.every(x=>!String(x.conceptKey||'').startsWith('pair:')||!lesson22Pairs.has(String(x.conceptKey).slice(5))),'Lesson 22 must not turn its taught example sentence into the direct mastery answer');
-
-console.log(JSON.stringify({ok:true,version:'v65',mastery:{questions:audit.masteryQuestions,typesUsed:audit.typesUsed,reservedLeaks:audit.reservedLeaks.length,duplicateAnswers:audit.duplicateAnswers.length,duplicateConcepts:audit.duplicateConcepts.length,badOptions:audit.badOptions.length},games:audit.gameMinutes,micOrTyping:audit.micOrTyping,lesson22Separated:true,compatibleWith:'v69'},null,2));
+assert.equal(audit.totalLessons,210);assert.equal(audit.incomplete.length,0);assert.equal(audit.reservedLeaks.length,0);assert.equal(audit.duplicateAnswers.length,0);assert.equal(audit.duplicateConcepts.length,0);assert.equal(audit.badOptions.length,0);assert(audit.typesUsed>=5);assert.equal(audit.gameMinutes.min,10);assert.equal(audit.gameMinutes.max,20);assert.equal(audit.gameMinutes.first,10);assert.equal(audit.gameMinutes.last,20);assert.equal(audit.gameMinutes.nondecreasing,true);assert.equal(audit.micOrTyping,true);assert.equal(audit.ok,true);
+for(let day=1;day<=210;day++){const count=[21,56,98,140,182,210].includes(day)?15:day%7===0?10:5,items=sandbox.buildSeparatedMasteryV65(day,count,0),lesson=sandbox.getDailyLesson(day),reservedEn=new Set((lesson.examplePairs||[]).map(p=>String(p.en||'').toLowerCase().replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' ').trim())),reservedRaw=new Set((lesson.examplePairs||[]).flatMap(p=>[String(p.en||'').trim(),String(p.th||'').trim()]));assert.equal(items.length,count);assert.equal(new Set(items.map(x=>x.conceptKey)).size,items.length);for(const item of items){const c=String(item.conceptKey||'');if(c.startsWith('pair:'))assert(!reservedEn.has(c.slice(5)));assert(item.options.every(o=>!reservedRaw.has(String(o.label||'').trim())));assert.equal(item.options.filter(o=>o.correct).length,1)}const minutes=sandbox.getGameSessionMinutesV65(day);assert(minutes>=10&&minutes<=20)}
+const source=read('interaction-quality-v65.js'),index=read('index.html'),sw=read('sw.js');assert(source.includes("const VERSION='v65'"));assert(source.includes('buildSeparatedMasteryV65'));assert(source.includes('SpeechRecognition')&&source.includes('พูดเพื่อตอบ'));assert(source.includes('.v62-text-input, .v62-textarea'));assert(source.includes('gameMinutesForDay')&&source.includes('10+')&&source.includes('*60000'));assert(!source.includes('MutationObserver'));assert(index.includes('interaction-quality-v65.css?v=65'));assert(index.includes('interaction-quality-v65.js?v=65'));assert(index.indexOf('interaction-quality-v65.js?v=65')>index.indexOf('mastery-variety-v64b.js?v=64'));assert(index.includes('fun-lessons-v68.js?v=68'));assert(index.includes('fun-lessons-v69.js?v=69'));assert(index.includes('fun-lessons-v70.js?v=70'));assert(sw.includes("const CACHE='my-english-v70'"));assert(sw.includes('./interaction-quality-v65.css?v=65')&&sw.includes('./interaction-quality-v65.js?v=65'));assert(sw.includes('./fun-lessons-v68.js?v=68')&&sw.includes('./fun-lessons-v68.css?v=68'));assert(sw.includes('./fun-lessons-v69.js?v=69')&&sw.includes('./fun-lessons-v69.css?v=69'));assert(sw.includes('./fun-lessons-v70.js?v=70')&&sw.includes('./fun-lessons-v70.css?v=70'));
+const lesson22=sandbox.getDailyLesson(22),items22=sandbox.buildSeparatedMasteryV65(22,5,0),lesson22Pairs=new Set((lesson22.examplePairs||[]).map(p=>String(p.en||'').toLowerCase().replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' ').trim()));assert(items22.every(x=>!String(x.conceptKey||'').startsWith('pair:')||!lesson22Pairs.has(String(x.conceptKey).slice(5))));console.log(JSON.stringify({ok:true,version:'v65',mastery:{questions:audit.masteryQuestions,typesUsed:audit.typesUsed,reservedLeaks:audit.reservedLeaks.length,duplicateAnswers:audit.duplicateAnswers.length,duplicateConcepts:audit.duplicateConcepts.length,badOptions:audit.badOptions.length},games:audit.gameMinutes,micOrTyping:audit.micOrTyping,lesson22Separated:true,compatibleWith:'v70'},null,2));

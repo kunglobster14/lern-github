@@ -1,0 +1,43 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+
+const source=fs.readFileSync('fun-lessons-v67.js','utf8');
+const store=new Map();
+class Element{}
+const levels=['A1','A2','B1','B2'];
+const oxford=Array.from({length:3000},(_,i)=>{
+  const word=`word${i+1}`;
+  return {id:i+1,word,thai:`คำ${i+1}`,part:i%3===0?'n.':i%3===1?'v.':'adj.',level:levels[i%4],example:`This example uses ${word} in context number ${i+1}.`,exampleThai:`ตัวอย่างที่ใช้ ${word} ในบริบทหมายเลข ${i+1}`};
+});
+const fakeLesson=day=>({day,cefr:levels[(day-1)%4],theme:`Theme ${day}`,title:`Lesson ${day}`,goal:`Goal ${day}`,scenario:`Scenario ${day}`,pattern:`Pattern ${day}`,focusWord:{en:`base${day}`,th:`พื้น${day}`},vocab:Array.from({length:6},(_,i)=>({en:`base${day}_${i}`,th:`พื้น${day}_${i}`})),examplePairs:Array.from({length:4},(_,i)=>({en:`Base example ${day} ${i}.`,th:`ตัวอย่าง ${day} ${i}`,word:`base${day}_${i}`,wordThai:`พื้น${day}_${i}`})),examples:[]});
+const document={querySelector(){return null},querySelectorAll(){return[]},addEventListener(){},dispatchEvent(){},body:{appendChild(){}},createElement(){return {innerHTML:'',querySelector(){return null},querySelectorAll(){return[]},addEventListener(){},remove(){},setAttribute(){},appendChild(){},classList:{add(){},toggle(){}}}}};
+const sandbox={console,document,Element,Event:class{},CustomEvent:class{},localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,String(v))},getLearnerLevel:()=> 'starter',getDailyCourseProgress:()=>({currentDay:1,unlockedThrough:210,completed:[],startDay:1}),getDailyLesson:fakeLesson,getOxford3000:()=>oxford,ensureOxford3000:async()=>oxford,addEventListener(){},setTimeout(){return 0},clearTimeout(){},speechSynthesis:{cancel(){},speak(){}},SpeechSynthesisUtterance:class{},navigator:{}};
+sandbox.window=sandbox;
+vm.createContext(sandbox);
+vm.runInContext(source,sandbox,{filename:'fun-lessons-v67.js'});
+const audit=sandbox.auditFunLessonsV67();
+assert.equal(audit.version,'v67');
+assert.equal(audit.totalLessons,210);
+assert.equal(audit.teachingStagesPerLesson,6);
+assert.equal(audit.totalTeachingStages,1260);
+assert.equal(audit.distinctTeachingStages,1260);
+assert.equal(audit.distinctFlowSignatures,210);
+assert.equal(audit.duplicateFlows.length,0);
+assert.equal(audit.duplicateStages.length,0);
+assert.equal(audit.distinctFocusWords,210);
+assert.equal(audit.distinctVocabularyWords,1260);
+assert.equal(audit.distinctExamples,840);
+assert.equal(audit.adjacentVocabularyRepeats.length,0);
+assert.equal(audit.quizQuestionsPerLesson,8);
+assert.equal(audit.quizPass,6);
+assert.equal(audit.quizBad.length,0);
+assert.equal(audit.finalVoiceHints,3);
+assert.equal(audit.hintBad.length,0);
+assert(audit.minMinutes>=25&&audit.maxMinutes<=40);
+assert.equal(audit.ok,true);
+assert.equal(sandbox.FUN_LESSONS_VERSION,'v67');
+assert(source.includes("QUIZ=8,PASS=6"));
+assert(source.includes('💡 คำใบ้'));
+assert(source.includes('function near'));
+console.log(JSON.stringify({ok:true,version:'v67',lessons:audit.totalLessons,teachingStages:audit.totalTeachingStages,uniqueFlows:audit.distinctFlowSignatures,uniqueVocabularyWords:audit.distinctVocabularyWords,uniqueExamples:audit.distinctExamples,quiz:[audit.quizPass,audit.quizQuestionsPerLesson],finalVoiceHints:audit.finalVoiceHints,minutes:[audit.minMinutes,audit.maxMinutes]},null,2));

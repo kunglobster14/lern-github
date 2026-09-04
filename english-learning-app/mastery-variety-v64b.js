@@ -1,6 +1,6 @@
 (()=>{
   const VERSION='v64b',STAGES=[[1,21],[22,56],[57,98],[99,140],[141,182],[183,210]],TYPES=['wordMeaning','wordRecall','thaiEnglish','englishThai','gap','listening','sentenceTarget'];
-  const norm=v=>String(v||'').toLowerCase().replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' ').trim();
+  const norm=v=>String(v||'').toLowerCase().normalize('NFKC').replace(/[^\p{L}\p{N}' ]+/gu,' ').replace(/\s+/g,' ').trim();
   const uniq=(arr,key=x=>x)=>{const s=new Set();return arr.filter(x=>{const k=key(x);if(!k||s.has(k))return false;s.add(k);return true})};
   const rotate=(arr,n)=>{if(!arr.length)return[];n=((Number(n)||0)%arr.length+arr.length)%arr.length;return arr.slice(n).concat(arr.slice(0,n))};
   const getLesson=day=>window.getDailyLesson?.(Number(day)||1)||null;

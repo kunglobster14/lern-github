@@ -33,3 +33,5 @@ jobs:
         run: node scripts/test-v60.mjs
       - name: Audit v62 institute curriculum and hard game pools
         run: node scripts/test-v62.mjs
+      - name: Audit v63 answers across all 210 lessons
+        run: node scripts/test-answer-integrity-v63.mjs

@@ -43,3 +43,5 @@ jobs:
         run: node scripts/test-v67.mjs
       - name: Audit v68 teach-before-test, Thai teacher clips, and no prompt reuse
         run: node scripts/test-v68.mjs
+      - name: Audit v69 Thai cartoon teacher across all lessons
+        run: node scripts/test-v69.mjs

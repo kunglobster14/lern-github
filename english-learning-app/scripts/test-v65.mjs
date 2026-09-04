@@ -64,12 +64,14 @@ assert(!source.includes('MutationObserver'),'v65 must remain event-driven');
 assert(index.includes('interaction-quality-v65.css?v=65'),'Index must load v65 CSS');
 assert(index.includes('interaction-quality-v65.js?v=65'),'Index must load v65 JS');
 assert(index.indexOf('interaction-quality-v65.js?v=65')>index.indexOf('mastery-variety-v64b.js?v=64'),'v65 must load after v64 mastery layer');
-assert(index.includes('fun-lessons-v68.js?v=68'),'Index must activate v68 lesson layer');
-assert(sw.includes("const CACHE='my-english-v68'"),'Service worker cache must be v68');
+assert(index.includes('fun-lessons-v68.js?v=68'),'Index must keep v68 provider layer');
+assert(index.includes('fun-lessons-v69.js?v=69'),'Index must activate v69 cartoon teacher');
+assert(sw.includes("const CACHE='my-english-v69'"),'Service worker cache must be v69');
 assert(sw.includes('./interaction-quality-v65.css?v=65')&&sw.includes('./interaction-quality-v65.js?v=65'),'Service worker must cache v65 assets');
-assert(sw.includes('./fun-lessons-v68.js?v=68')&&sw.includes('./fun-lessons-v68.css?v=68'),'Service worker must cache v68 assets');
+assert(sw.includes('./fun-lessons-v68.js?v=68')&&sw.includes('./fun-lessons-v68.css?v=68'),'Service worker must cache v68 provider assets');
+assert(sw.includes('./fun-lessons-v69.js?v=69')&&sw.includes('./fun-lessons-v69.css?v=69'),'Service worker must cache v69 cartoon teacher assets');
 
 const lesson22=sandbox.getDailyLesson(22),items22=sandbox.buildSeparatedMasteryV65(22,5,0),lesson22Pairs=new Set((lesson22.examplePairs||[]).map(p=>String(p.en||'').toLowerCase().replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' ').trim()));
 assert(items22.every(x=>!String(x.conceptKey||'').startsWith('pair:')||!lesson22Pairs.has(String(x.conceptKey).slice(5))),'Lesson 22 must not turn its taught example sentence into the direct mastery answer');
 
-console.log(JSON.stringify({ok:true,version:'v65',mastery:{questions:audit.masteryQuestions,typesUsed:audit.typesUsed,reservedLeaks:audit.reservedLeaks.length,duplicateAnswers:audit.duplicateAnswers.length,duplicateConcepts:audit.duplicateConcepts.length,badOptions:audit.badOptions.length},games:audit.gameMinutes,micOrTyping:audit.micOrTyping,lesson22Separated:true,compatibleWith:'v68'},null,2));
+console.log(JSON.stringify({ok:true,version:'v65',mastery:{questions:audit.masteryQuestions,typesUsed:audit.typesUsed,reservedLeaks:audit.reservedLeaks.length,duplicateAnswers:audit.duplicateAnswers.length,duplicateConcepts:audit.duplicateConcepts.length,badOptions:audit.badOptions.length},games:audit.gameMinutes,micOrTyping:audit.micOrTyping,lesson22Separated:true,compatibleWith:'v69'},null,2));

@@ -3,66 +3,9 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
-
-const root=path.resolve(process.cwd());
-const read=name=>fs.readFileSync(path.join(root,name),'utf8');
-const packs=['oxford3000-pack-01.js','oxford3000-pack-02.js','oxford3000-pack-03.js','oxford3000-pack-03b.js','oxford3000-pack-04.js','oxford3000-pack-05.js','oxford3000-pack-06.js','oxford3000-pack-07.js','oxford3000-pack-08.js'];
-let b64='';for(const name of packs){const m=read(name).match(/\+\s*'([A-Za-z0-9+/=]+)'\s*;?\s*$/);assert(m,`Cannot extract ${name}`);b64+=m[1]}
-const parsed=JSON.parse(zlib.gunzipSync(Buffer.from(b64,'base64')).toString('utf8'));
-const raw=Array.isArray(parsed)?parsed:(parsed.rows||parsed.data||parsed.words||parsed.items||[]);
-const rows=raw.map((r,i)=>Array.isArray(r)?{id:r[0]??i+1,word:r[1],part:r[2],level:r[3],thai:r[4],example:r[5],exampleThai:r[6]||''}:r);
-assert.equal(rows.length,3000);
-
-const store=new Map();class Element{}
-const document={documentElement:{classList:{contains:()=>false}},body:{contains:()=>false},head:{appendChild(){}},addEventListener(){},dispatchEvent(){},querySelector(){return null},querySelectorAll(){return[]},createElement(){return {textContent:'',style:{},appendChild(){},querySelector(){return null},querySelectorAll(){return[]}}},createTextNode(text){return{textContent:text}}};
-const sandbox={console,document,Element,CustomEvent:class{constructor(type,init){this.type=type;this.detail=init?.detail}},localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,String(v))},getLearnerLevel:()=> 'intermediate',getLearnerLevelInfo:()=>({label:'กลาง',cefr:'A2–B1',cefrLevels:['A2','B1']}),getOxford3000:()=>rows,ensureOxford3000:async()=>rows,addEventListener(){},setTimeout(fn){if(typeof fn==='function')fn();return 0},clearTimeout(){},requestAnimationFrame(fn){if(typeof fn==='function')fn();return 0},speechSynthesis:{cancel(){},speak(){}},SpeechSynthesisUtterance:class{}};
-sandbox.window=sandbox;vm.createContext(sandbox);
-vm.runInContext(read('daily-course-v53.js'),sandbox,{filename:'daily-course-v53.js'});
-vm.runInContext(read('curriculum-quality-v57.js'),sandbox,{filename:'curriculum-quality-v57.js'});
-vm.runInContext(read('course-game-fixes-v59.js'),sandbox,{filename:'course-game-fixes-v59.js'});
-vm.runInContext(read('curriculum-variety-v60.js'),sandbox,{filename:'curriculum-variety-v60.js'});
-await Promise.resolve();await Promise.resolve();await new Promise(r=>setImmediate(r));
-vm.runInContext(read('lesson-variety-v64.js'),sandbox,{filename:'lesson-variety-v64.js'});
-vm.runInContext(read('mastery-variety-v64b.js'),sandbox,{filename:'mastery-variety-v64b.js'});
-
-const production=sandbox.auditLessonVarietyV64();
-assert.equal(production.totalLessons,210);
-assert.equal(production.productionSentences,2,'Production must use two sentence fields');
-assert.equal(production.speakingEveryLesson,true,'Every lesson must have a speak-along target');
-assert.equal(production.productionStylesUsed,8,'All production styles should be used');
-assert.equal(production.distinctProductionSignatures,210,'Each lesson needs a distinct production signature');
-assert.equal(production.missingSpeech.length,0,'A lesson lacks speaking practice');
-
-const mastery=sandbox.auditMasteryVarietyV64B();
-assert.equal(mastery.totalLessons,210);
-assert.equal(mastery.incomplete.length,0,'Some lessons do not have enough varied mastery questions');
-assert.equal(mastery.duplicates.length,0,'A mastery set repeats the same correct answer');
-assert.equal(mastery.bad.length,0,'A mastery question has invalid options');
-assert(mastery.typesUsed>=6,`Expected broad mastery variety, got ${mastery.typesUsed} types`);
-assert.equal(mastery.ok,true);
-for(let day=1;day<=210;day++){
-  const count=[21,56,98,140,182,210].includes(day)?15:day%7===0?10:5,items=sandbox.buildMasteryItemsV64B(day,count,0),answers=items.map(x=>String(x.correctLabel).toLowerCase().trim());
-  assert.equal(items.length,count,`Lesson ${day} mastery count mismatch`);
-  assert.equal(new Set(answers).size,answers.length,`Lesson ${day} repeats a correct answer`);
-  assert(items.every(x=>x.options.length===4&&x.options.filter(o=>o.correct).length===1&&x.options.every(o=>String(o.label||'').trim())),`Lesson ${day} invalid answer options`);
-}
-const source=read('lesson-variety-v64.js'),masterySource=read('mastery-variety-v64b.js'),index=read('index.html'),sw=read('sw.js');
-assert(source.includes("const VERSION='v64'"));
-assert(source.includes('v64Sentence1')&&source.includes('v64Sentence2'),'Two-sentence Production UI missing');
-assert(source.includes('SpeechRecognition')&&source.includes('พูดตาม'),'Speak-along UI missing');
-assert(masterySource.includes("const VERSION='v64b'"));
-assert(masterySource.includes('wordRecall')&&masterySource.includes('sentenceTarget'),'Final mastery variety types missing');
-assert(!source.includes('MutationObserver')&&!masterySource.includes('MutationObserver'),'v64 must stay event-driven');
-assert(index.includes('lesson-variety-v64.css?v=64'),'Index must load v64 CSS');
-assert(index.includes('lesson-variety-v64.js?v=64'),'Index must load v64 JS');
-assert(index.includes('mastery-variety-v64b.js?v=64'),'Index must load mastery safeguard');
-assert(index.indexOf('mastery-variety-v64b.js?v=64')>index.indexOf('lesson-variety-v64.js?v=64'),'Mastery safeguard must load after v64');
-assert(index.includes('interaction-quality-v65.js?v=65'),'Current index must preserve v64 under the v65 interaction layer');
-assert(index.includes('fun-lessons-v68.js?v=68'),'Current index must keep v68 provider engine');
-assert(index.includes('fun-lessons-v69.js?v=69'),'Current index must activate v69 cartoon teacher');
-assert(sw.includes("const CACHE='my-english-v69'"),'Current service worker cache must be v69');
-assert(sw.includes('./lesson-variety-v64.css?v=64')&&sw.includes('./lesson-variety-v64.js?v=64')&&sw.includes('./mastery-variety-v64b.js?v=64'),'Service worker must keep v64 assets');
-assert(sw.includes('./interaction-quality-v65.js?v=65'),'Service worker must also cache v65 interaction layer');
-assert(sw.includes('./fun-lessons-v68.js?v=68'),'Service worker must cache v68 provider engine');
-assert(sw.includes('./fun-lessons-v69.js?v=69'),'Service worker must cache v69 cartoon teacher');
-console.log(JSON.stringify({ok:true,version:'v64',production:{sentences:2,styles:production.productionStylesUsed,distinctSignatures:production.distinctProductionSignatures,speakingEveryLesson:production.speakingEveryLesson},mastery,compatibleWith:'v69'},null,2));
+const root=path.resolve(process.cwd()),read=name=>fs.readFileSync(path.join(root,name),'utf8');
+const packs=['oxford3000-pack-01.js','oxford3000-pack-02.js','oxford3000-pack-03.js','oxford3000-pack-03b.js','oxford3000-pack-04.js','oxford3000-pack-05.js','oxford3000-pack-06.js','oxford3000-pack-07.js','oxford3000-pack-08.js'];let b64='';for(const name of packs){const m=read(name).match(/\+\s*'([A-Za-z0-9+/=]+)'\s*;?\s*$/);assert(m,`Cannot extract ${name}`);b64+=m[1]}const parsed=JSON.parse(zlib.gunzipSync(Buffer.from(b64,'base64')).toString('utf8')),raw=Array.isArray(parsed)?parsed:(parsed.rows||parsed.data||parsed.words||parsed.items||[]),rows=raw.map((r,i)=>Array.isArray(r)?{id:r[0]??i+1,word:r[1],part:r[2],level:r[3],thai:r[4],example:r[5],exampleThai:r[6]||''}:r);assert.equal(rows.length,3000);
+const store=new Map();class Element{}const document={documentElement:{classList:{contains:()=>false}},body:{contains:()=>false},head:{appendChild(){}},addEventListener(){},dispatchEvent(){},querySelector(){return null},querySelectorAll(){return[]},createElement(){return{textContent:'',style:{},appendChild(){},querySelector(){return null},querySelectorAll(){return[]}}},createTextNode(text){return{textContent:text}}};const sandbox={console,document,Element,CustomEvent:class{constructor(type,init){this.type=type;this.detail=init?.detail}},localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,String(v))},getLearnerLevel:()=> 'intermediate',getLearnerLevelInfo:()=>({label:'กลาง',cefr:'A2–B1',cefrLevels:['A2','B1']}),getOxford3000:()=>rows,ensureOxford3000:async()=>rows,addEventListener(){},setTimeout(fn){if(typeof fn==='function')fn();return 0},clearTimeout(){},requestAnimationFrame(fn){if(typeof fn==='function')fn();return 0},speechSynthesis:{cancel(){},speak(){}},SpeechSynthesisUtterance:class{}};sandbox.window=sandbox;vm.createContext(sandbox);
+for(const f of ['daily-course-v53.js','curriculum-quality-v57.js','course-game-fixes-v59.js','curriculum-variety-v60.js'])vm.runInContext(read(f),sandbox,{filename:f});await Promise.resolve();await Promise.resolve();await new Promise(r=>setImmediate(r));vm.runInContext(read('lesson-variety-v64.js'),sandbox,{filename:'lesson-variety-v64.js'});vm.runInContext(read('mastery-variety-v64b.js'),sandbox,{filename:'mastery-variety-v64b.js'});
+const production=sandbox.auditLessonVarietyV64(),mastery=sandbox.auditMasteryVarietyV64B();assert.equal(production.totalLessons,210);assert.equal(production.productionSentences,2);assert.equal(production.speakingEveryLesson,true);assert.equal(production.productionStylesUsed,8);assert.equal(production.distinctProductionSignatures,210);assert.equal(production.missingSpeech.length,0);assert.equal(mastery.totalLessons,210);assert.equal(mastery.incomplete.length,0);assert.equal(mastery.duplicates.length,0);assert.equal(mastery.bad.length,0);assert(mastery.typesUsed>=6);assert.equal(mastery.ok,true);for(let day=1;day<=210;day++){const count=[21,56,98,140,182,210].includes(day)?15:day%7===0?10:5,items=sandbox.buildMasteryItemsV64B(day,count,0),answers=items.map(x=>String(x.correctLabel).toLowerCase().trim());assert.equal(items.length,count);assert.equal(new Set(answers).size,answers.length);assert(items.every(x=>x.options.length===4&&x.options.filter(o=>o.correct).length===1&&x.options.every(o=>String(o.label||'').trim())))}
+const source=read('lesson-variety-v64.js'),masterySource=read('mastery-variety-v64b.js'),index=read('index.html'),sw=read('sw.js');assert(source.includes("const VERSION='v64'"));assert(source.includes('v64Sentence1')&&source.includes('v64Sentence2'));assert(source.includes('SpeechRecognition')&&source.includes('พูดตาม'));assert(masterySource.includes("const VERSION='v64b'"));assert(!source.includes('MutationObserver')&&!masterySource.includes('MutationObserver'));assert(index.includes('lesson-variety-v64.css?v=64'));assert(index.includes('lesson-variety-v64.js?v=64'));assert(index.includes('mastery-variety-v64b.js?v=64'));assert(index.includes('interaction-quality-v65.js?v=65'));assert(index.includes('fun-lessons-v68.js?v=68'));assert(index.includes('fun-lessons-v69.js?v=69'));assert(index.includes('fun-lessons-v70.js?v=70'));assert(sw.includes("const CACHE='my-english-v70'"));assert(sw.includes('./lesson-variety-v64.css?v=64')&&sw.includes('./lesson-variety-v64.js?v=64')&&sw.includes('./mastery-variety-v64b.js?v=64'));assert(sw.includes('./interaction-quality-v65.js?v=65'));assert(sw.includes('./fun-lessons-v68.js?v=68'));assert(sw.includes('./fun-lessons-v69.js?v=69'));assert(sw.includes('./fun-lessons-v70.js?v=70'));console.log(JSON.stringify({ok:true,version:'v64',production:{sentences:2,styles:production.productionStylesUsed,distinctSignatures:production.distinctProductionSignatures,speakingEveryLesson:production.speakingEveryLesson},mastery,compatibleWith:'v70'},null,2));

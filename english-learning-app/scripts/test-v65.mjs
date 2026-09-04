@@ -33,7 +33,7 @@ assert.equal(audit.reservedLeaks.length,0,'Mastery must not reuse lesson example
 assert.equal(audit.duplicateAnswers.length,0,'Mastery correct answers must not repeat in one set');
 assert.equal(audit.duplicateConcepts.length,0,'Mastery concepts must not repeat in one set');
 assert.equal(audit.badOptions.length,0,'Mastery options must not leak the lesson example sentence or be malformed');
-assert(audit.typesUsed>=5,`Expected broad separated mastery variety, got ${audit.typesUsed}`);
+assert(audit.typesUsed>=5,`Expected broad separated mastery variety, got ${audit.typesUsed} types`);
 assert.equal(audit.gameMinutes.min,10);
 assert.equal(audit.gameMinutes.max,20);
 assert.equal(audit.gameMinutes.first,10);
@@ -64,12 +64,12 @@ assert(!source.includes('MutationObserver'),'v65 must remain event-driven');
 assert(index.includes('interaction-quality-v65.css?v=65'),'Index must load v65 CSS');
 assert(index.includes('interaction-quality-v65.js?v=65'),'Index must load v65 JS');
 assert(index.indexOf('interaction-quality-v65.js?v=65')>index.indexOf('mastery-variety-v64b.js?v=64'),'v65 must load after v64 mastery layer');
-assert(index.includes('fun-lessons-v67.js?v=67'),'Index must activate v67 lesson layer');
-assert(sw.includes("const CACHE='my-english-v67'"),'Service worker cache must be v67');
+assert(index.includes('fun-lessons-v68.js?v=68'),'Index must activate v68 lesson layer');
+assert(sw.includes("const CACHE='my-english-v68'"),'Service worker cache must be v68');
 assert(sw.includes('./interaction-quality-v65.css?v=65')&&sw.includes('./interaction-quality-v65.js?v=65'),'Service worker must cache v65 assets');
-assert(sw.includes('./fun-lessons-v67.js?v=67')&&sw.includes('./fun-lessons-v67.css?v=67'),'Service worker must cache v67 assets');
+assert(sw.includes('./fun-lessons-v68.js?v=68')&&sw.includes('./fun-lessons-v68.css?v=68'),'Service worker must cache v68 assets');
 
 const lesson22=sandbox.getDailyLesson(22),items22=sandbox.buildSeparatedMasteryV65(22,5,0),lesson22Pairs=new Set((lesson22.examplePairs||[]).map(p=>String(p.en||'').toLowerCase().replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' ').trim()));
 assert(items22.every(x=>!String(x.conceptKey||'').startsWith('pair:')||!lesson22Pairs.has(String(x.conceptKey).slice(5))),'Lesson 22 must not turn its taught example sentence into the direct mastery answer');
 
-console.log(JSON.stringify({ok:true,version:'v65',mastery:{questions:audit.masteryQuestions,typesUsed:audit.typesUsed,reservedLeaks:audit.reservedLeaks.length,duplicateAnswers:audit.duplicateAnswers.length,duplicateConcepts:audit.duplicateConcepts.length,badOptions:audit.badOptions.length},games:audit.gameMinutes,micOrTyping:audit.micOrTyping,lesson22Separated:true,compatibleWith:'v67'},null,2));
+console.log(JSON.stringify({ok:true,version:'v65',mastery:{questions:audit.masteryQuestions,typesUsed:audit.typesUsed,reservedLeaks:audit.reservedLeaks.length,duplicateAnswers:audit.duplicateAnswers.length,duplicateConcepts:audit.duplicateConcepts.length,badOptions:audit.badOptions.length},games:audit.gameMinutes,micOrTyping:audit.micOrTyping,lesson22Separated:true,compatibleWith:'v68'},null,2));

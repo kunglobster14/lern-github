@@ -47,3 +47,5 @@ jobs:
         run: node scripts/test-v69.mjs
       - name: Audit v70 Thai-first localization and redesigned cartoon teacher
         run: node scripts/test-v70.mjs
+      - name: Audit v71 natural voices and strict teach-test separation
+        run: node scripts/test-v71.mjs

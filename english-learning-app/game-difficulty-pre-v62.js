@@ -3,10 +3,10 @@
   const SUPPORTED=new Set(['mix','builder','gap','translate','dialog','context','match','listen','spell','memory','sprint','rush','trap']);
   const BASIC_TARGETS=new Set(`hello hi hey morning afternoon evening goodbye bye thank thanks please yes no okay ok good nice name friend family mother father brother sister man woman boy girl this that here there today tomorrow yesterday day night time one two three first last water food coffee tea home house room door window table chair phone school work go come get make do have be am is are was were can will like want need help sorry meet speak say tell see look eat drink`.split(/\s+/));
   const POLICY={
-    starter:{levels:new Set(['A1','A2']),minWords:5,maxWords:15,minWordLen:4,choices:4,label:'Foundation Challenge'},
-    basic:{levels:new Set(['A1','A2']),minWords:6,maxWords:17,minWordLen:5,choices:4,label:'A1–A2 Challenge'},
-    intermediate:{levels:new Set(['A2','B1']),minWords:8,maxWords:22,minWordLen:5,choices:4,label:'A2–B1 Challenge'},
-    upper:{levels:new Set(['B1','B2']),minWords:10,maxWords:28,minWordLen:6,choices:5,label:'B1–B2 Challenge'}
+    starter:{levels:new Set(['A1','A2']),fallbackLevels:new Set(['A1','A2']),minWords:5,maxWords:15,minWordLen:4,choices:4,label:'Foundation Challenge'},
+    basic:{levels:new Set(['A1','A2']),fallbackLevels:new Set(['A1','A2']),minWords:6,maxWords:17,minWordLen:5,choices:4,label:'A1–A2 Challenge'},
+    intermediate:{levels:new Set(['A2','B1']),fallbackLevels:new Set(['A2','B1','B2']),minWords:8,maxWords:22,minWordLen:5,choices:4,label:'A2–B1 Challenge'},
+    upper:{levels:new Set(['B1','B2']),fallbackLevels:new Set(['A2','B1','B2']),minWords:10,maxWords:28,minWordLen:5,choices:5,label:'B1–B2 Challenge'}
   };
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const norm=v=>String(v||'').toLowerCase().replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' ').trim();
@@ -28,25 +28,32 @@
   }
   window.isHardGameWordAllowedV62=(word,learner='intermediate',rowLevel='')=>wordAllowed(word,learner,rowLevel);
 
+  const mapRows=raw=>(Array.isArray(raw)?raw:[]).map((r,i)=>({id:r.id??i+1,word:String(r.word||'').trim(),thai:String(r.thai||'').trim(),level:String(r.level||'').toUpperCase(),part:String(r.part||''),example:String(r.example||'').trim(),exampleThai:String(r.exampleThai||'').trim()})).filter(r=>r.word&&r.thai&&r.example&&r.exampleThai);
+  const relaxedWordAllowed=(r,p)=>{const w=norm(r.word),lv=String(r.level||'').toUpperCase();return !!w&&!isBasic(w)&&w.length>=Math.max(4,p.minWordLen-1)&&(!lv||p.levels.has(lv))};
+  const fallbackWordAllowed=(r,p)=>{const w=norm(r.word),lv=String(r.level||'').toUpperCase();return !!w&&!isBasic(w)&&w.length>=4&&(!lv||p.fallbackLevels.has(lv))};
+  const levelWeight=lv=>({B2:4,B1:3,A2:2,A1:1}[String(lv||'').toUpperCase()]||0);
+  const complexityScore=r=>levelWeight(r.level)*100+Math.min(40,norm(r.word).length*4)+Math.min(40,countWords(r.example)*2)+(rxWord(r.word).test(r.example)?15:0);
   let rows=[],rowsKey='',readyPromise=null,session={count:0,streak:0,recent:[]};
   async function ensureRows(){
     const key=level();if(rows.length&&rowsKey===key)return rows;if(readyPromise)return readyPromise;
     readyPromise=(async()=>{
       try{await window.ensureOxford3000?.()}catch{}
       let raw=[];try{raw=window.getOxford3000?.()||[]}catch{}
-      const p=currentPolicy();
-      let list=(Array.isArray(raw)?raw:[]).map((r,i)=>({id:r.id??i+1,word:String(r.word||'').trim(),thai:String(r.thai||'').trim(),level:String(r.level||'').toUpperCase(),part:String(r.part||''),example:String(r.example||'').trim(),exampleThai:String(r.exampleThai||'').trim()})).filter(r=>r.word&&r.thai&&r.example&&r.exampleThai&&wordAllowed(r.word,level(),r.level));
-      list=list.filter(r=>{const n=countWords(r.example);return n>=p.minWords&&n<=p.maxWords&&rxWord(r.word).test(r.example)});
+      const p=currentPolicy(),all=mapRows(raw);
+      let list=all.filter(r=>wordAllowed(r.word,level(),r.level)).filter(r=>{const n=countWords(r.example);return n>=p.minWords&&n<=p.maxWords&&rxWord(r.word).test(r.example)});
+      if(list.length<180){
+        const relaxed=all.filter(r=>relaxedWordAllowed(r,p)&&countWords(r.example)>=Math.max(5,p.minWords-4)).sort((a,b)=>complexityScore(b)-complexityScore(a));
+        const seen=new Set(list.map(x=>String(x.id)));for(const r of relaxed){if(!seen.has(String(r.id))){seen.add(String(r.id));list.push(r);if(list.length>=240)break}}
+      }
       if(list.length<120){
-        let relaxed=(Array.isArray(raw)?raw:[]).map((r,i)=>({id:r.id??i+1,word:String(r.word||'').trim(),thai:String(r.thai||'').trim(),level:String(r.level||'').toUpperCase(),part:String(r.part||''),example:String(r.example||'').trim(),exampleThai:String(r.exampleThai||'').trim()})).filter(r=>r.word&&r.thai&&r.example&&r.exampleThai&&wordAllowed(r.word,level(),r.level));
-        relaxed=relaxed.filter(r=>countWords(r.example)>=Math.max(4,p.minWords-2));
-        const seen=new Set(list.map(x=>String(x.id)));for(const r of relaxed){if(!seen.has(String(r.id))){seen.add(String(r.id));list.push(r)}}
+        const fallback=all.filter(r=>fallbackWordAllowed(r,p)&&countWords(r.example)>=5).sort((a,b)=>complexityScore(b)-complexityScore(a));
+        const seen=new Set(list.map(x=>String(x.id)));for(const r of fallback){if(!seen.has(String(r.id))){seen.add(String(r.id));list.push(r);if(list.length>=180)break}}
       }
       rows=list;rowsKey=key;session.recent=[];return rows;
     })().finally(()=>{readyPromise=null});
     return readyPromise;
   }
-  window.getHardGamePoolStatsV62=async()=>{const list=await ensureRows();return{version:VERSION,learner:level(),rows:list.length,difficulty:Number(difficulty().toFixed(1)),basicTargetsExcluded:[...BASIC_TARGETS].filter(x=>list.some(r=>norm(r.word)===x))}};
+  window.getHardGamePoolStatsV62=async()=>{const list=await ensureRows(),levelCounts={};list.forEach(r=>levelCounts[r.level||'unknown']=(levelCounts[r.level||'unknown']||0)+1);return{version:VERSION,learner:level(),rows:list.length,difficulty:Number(difficulty().toFixed(1)),levelCounts,basicTargetsExcluded:[...BASIC_TARGETS].filter(x=>list.some(r=>norm(r.word)===x))}};
 
   function closeGame(){const d=document.querySelector('#hardGameV62');if(!d)return;try{if(d.open)d.close()}catch{}d.remove()}
   function shell(type){

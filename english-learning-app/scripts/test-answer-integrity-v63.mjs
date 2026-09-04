@@ -33,8 +33,9 @@ vm.runInContext(read('answer-integrity-v63.js'),sandbox,{filename:'answer-integr
 const legacyAudit=sandbox.auditAnswerIntegrityV63();
 assert.equal(legacyAudit.totalLessons,210);
 assert.equal(legacyAudit.legacyQuickChecks,210,'Every lesson must have a Quick Check target');
-assert.deepEqual(legacyAudit.missingCorrect,[],'A legacy Quick Check can render without its correct answer');
-assert.deepEqual(legacyAudit.missingData,[],'A lesson has incomplete Quick Check data');
+assert.equal(legacyAudit.missingCorrect.length,0,`Legacy Quick Checks missing correct answers: ${JSON.stringify([...legacyAudit.missingCorrect])}`);
+assert.equal(legacyAudit.missingData.length,0,`Lessons with incomplete Quick Check data: ${JSON.stringify([...legacyAudit.missingData])}`);
+assert.equal(legacyAudit.duplicateLabels.length,0,`Legacy Quick Checks with duplicate labels: ${JSON.stringify([...legacyAudit.duplicateLabels])}`);
 assert.equal(legacyAudit.allCorrect,true);
 
 let questionSets=0,questions=0;
@@ -68,4 +69,4 @@ assert(source.includes("window.INSTITUTE_COURSE_VERSION==='v62'"),'v63 must pref
 assert(source.includes('auditAnswerIntegrityV63'),'v63 audit export missing');
 assert(!source.includes('MutationObserver'),'v63 must remain event-driven');
 
-console.log(JSON.stringify({ok:true,version:'v63',lessonsChecked:210,legacyQuickChecks:legacyAudit.legacyQuickChecks,legacyMissingCorrect:legacyAudit.missingCorrect,questionSets,questions,instituteAnswersPresent:true},null,2));
+console.log(JSON.stringify({ok:true,version:'v63',lessonsChecked:210,legacyQuickChecks:legacyAudit.legacyQuickChecks,legacyMissingCorrect:[...legacyAudit.missingCorrect],legacyDuplicateLabels:[...legacyAudit.duplicateLabels],questionSets,questions,instituteAnswersPresent:true},null,2));

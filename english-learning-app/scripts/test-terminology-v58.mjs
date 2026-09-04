@@ -3,11 +3,7 @@ import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
 const source=fs.readFileSync('terminology-v58.js','utf8');
-const sandbox={
-  document:{addEventListener(){},querySelectorAll(){return[]}},
-  requestAnimationFrame(){return 0},setTimeout(){return 0},
-  console
-};
+const sandbox={document:{addEventListener(){},querySelectorAll(){return[]}},requestAnimationFrame(){return 0},setTimeout(){return 0},console};
 sandbox.window=sandbox;
 vm.createContext(sandbox);
 vm.runInContext(source,sandbox,{filename:'terminology-v58.js'});
@@ -31,11 +27,11 @@ assert(index.indexOf('game-difficulty-pre-v62.js?v=62')>index.indexOf('terminolo
 assert(index.indexOf('course-game-fixes-v59.js?v=59')>index.indexOf('game-difficulty-pre-v62.js?v=62'),'v62 game capture must run before v59 game capture');
 assert(index.includes('LOCAL · 210 บทเรียน'),'Top badge must use Thai lesson terminology');
 const sw=fs.readFileSync('sw.js','utf8');
-assert(sw.includes("const CACHE='my-english-v67'"),'Service worker cache must be v67');
+assert(sw.includes("const CACHE='my-english-v68'"),'Service worker cache must be v68');
 assert(sw.includes('./terminology-v58.js?v=58'),'Service worker must cache terminology v58');
 assert(sw.includes('./game-difficulty-pre-v62.js?v=62'),'Service worker must cache v62 game policy');
 assert(sw.includes('./course-game-fixes-v59.js?v=59'),'Service worker must cache v59 fixes');
 assert(sw.includes('./lesson-variety-v64.js?v=64'),'Service worker must cache v64 lesson variety');
 assert(sw.includes('./interaction-quality-v65.js?v=65'),'Service worker must cache v65 interaction quality');
-assert(sw.includes('./fun-lessons-v67.js?v=67'),'Service worker must cache v67 lessons');
-console.log(JSON.stringify({ok:true,version:'v58',dayUiRemoved:true,examples:['บทเรียนที่ 1','เลือกบทเรียน','บทเรียนถัดไป'],compatibleWith:'v67'},null,2));
+assert(sw.includes('./fun-lessons-v68.js?v=68'),'Service worker must cache v68 lessons');
+console.log(JSON.stringify({ok:true,version:'v58',dayUiRemoved:true,examples:['บทเรียนที่ 1','เลือกบทเรียน','บทเรียนถัดไป'],compatibleWith:'v68'},null,2));

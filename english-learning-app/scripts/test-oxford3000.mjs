@@ -19,7 +19,7 @@ assert.equal(rows.filter(r=>!String(get(r,'example',5)||r?.sentence||'').trim())
 assert.equal(rows.filter(r=>!/[ก-๙]/.test(String(get(r,'exampleThai',6)||r?.example_thai||r?.sentenceThai||''))).length,0,'Thai examples missing');
 assert.equal(new Set(rows.map((r,i)=>get(r,'id',0)??i+1)).size,3000,'Oxford IDs must be unique');
 
-const jsFiles=['learner-level-v53.js','daily-course-v53.js','sentence-coach-v55.js','game-content-v56.js','adaptive-games-v54.js','learning-experience-v55.js','curriculum-quality-v57.js','terminology-v58.js','course-game-fixes-v59.js','curriculum-variety-v60.js','learning-guide.js','oxford3000-loader.js','oxford3000-core.js','core3000-study.js','core3000-library.js','oxford3000-practice.js','oxford3000-stories.js','oxford3000-story-upgrade.js','oxford3000-story-speed.js','core3000-plan.js','account-gate.js','account-admin.js'];
+const jsFiles=['learner-level-v53.js','daily-course-v53.js','sentence-coach-v55.js','game-content-v56.js','adaptive-games-v54.js','learning-experience-v55.js','curriculum-quality-v57.js','terminology-v58.js','game-difficulty-pre-v62.js','course-game-fixes-v59.js','curriculum-variety-v60.js','institute-course-v62.js','learning-guide.js','oxford3000-loader.js','oxford3000-core.js','core3000-study.js','core3000-library.js','oxford3000-practice.js','oxford3000-stories.js','oxford3000-story-upgrade.js','oxford3000-story-speed.js','core3000-plan.js','account-gate.js','account-admin.js'];
 for(const file of jsFiles){const check=spawnSync(process.execPath,['--check',path.join(root,file)],{encoding:'utf8'});assert.equal(check.status,0,`${file} syntax error:\n${check.stderr||check.stdout}`)}
 
 const storySource=readFile('oxford3000-stories.js');
@@ -59,8 +59,19 @@ assert(variety.includes("const VERSION='v60'"),'Curriculum variety v60 missing')
 assert(variety.includes('Mini Response · เลือกประโยคให้ตรงความหมาย'),'v60 must preserve coherent Mini Response');
 assert(!variety.includes('MutationObserver'),'v60 must remain event-driven');
 
+const institute=readFile('institute-course-v62.js'),hardGame=readFile('game-difficulty-pre-v62.js');
+assert(institute.includes("const VERSION='v62'"),'Institute course v62 missing');
+assert(institute.includes('MASTERY_THRESHOLD=80'),'v62 mastery threshold must be 80');
+assert(institute.includes('Speaking Gate'),'v62 speaking gate missing');
+assert(institute.includes('Weekly Review'),'v62 weekly review missing');
+assert(institute.includes('Stage Exam'),'v62 stage exam missing');
+assert(hardGame.includes("const VERSION='v62'"),'Hard game v62 missing');
+for(const basic of ['hello','morning','thank','thanks'])assert(hardGame.includes(basic),`Hard game exclusion list must include ${basic}`);
+assert(!institute.includes('MutationObserver'),'v62 institute course must remain event-driven');
+assert(!hardGame.includes('MutationObserver'),'v62 hard games must remain event-driven');
+
 const accountSource=readFile('account-gate.js');
-assert(accountSource.includes("const VERSION='v61'"),'Account gate must be v61');
+assert(accountSource.includes("const VERSION='v61'"),'Account gate must stay v61');
 assert(accountSource.includes("classList.add('account-locked')"),'Login gate must lock lessons before auth');
 assert(accountSource.includes("if(!d.authenticated){overlay(d);return}"),'Unauthenticated learners must see login only');
 assert(accountSource.includes('ผู้เรียนแต่ละคนใช้บัญชีของตัวเอง'),'Login must explain separate learner accounts');
@@ -73,12 +84,14 @@ assert(adminSource.includes("action:'create-user'"),'Admin must be able to creat
 assert(adminSource.includes("action:'reset-password'"),'Admin must be able to reset learner passwords');
 
 const indexSource=readFile('index.html');
-for(const asset of ['account-gate.js?v=61','account-gate.css?v=61','daily-course-v53.js?v=53','sentence-coach-v55.js?v=55','game-content-v56.js?v=56','adaptive-games-v54.js?v=54','learning-experience-v55.js?v=55','curriculum-quality-v57.js?v=57','terminology-v58.js?v=58','course-game-fixes-v59.js?v=59','curriculum-variety-v60.js?v=60'])assert(indexSource.includes(asset),`Index missing ${asset}`);
+for(const asset of ['account-gate.js?v=61','account-gate.css?v=61','daily-course-v53.js?v=53','sentence-coach-v55.js?v=55','game-content-v56.js?v=56','adaptive-games-v54.js?v=54','learning-experience-v55.js?v=55','curriculum-quality-v57.js?v=57','terminology-v58.js?v=58','game-difficulty-pre-v62.js?v=62','course-game-fixes-v59.js?v=59','curriculum-variety-v60.js?v=60','institute-course-v62.js?v=62','institute-course-v62.css?v=62'])assert(indexSource.includes(asset),`Index missing ${asset}`);
+assert(indexSource.indexOf('game-difficulty-pre-v62.js?v=62')<indexSource.indexOf('course-game-fixes-v59.js?v=59'),'v62 game capture must load before v59 game capture');
+assert(indexSource.indexOf('institute-course-v62.js?v=62')>indexSource.indexOf('curriculum-variety-v60.js?v=60'),'v62 institute layer must load after v60 curriculum');
 assert(indexSource.includes('>SENTENCE COACH</span>'),'Bottom nav must use SENTENCE COACH wording');
 assert(indexSource.includes('210 บทเรียน'),'Index must use lesson terminology');
 
 const swSource=readFile('sw.js');
-assert(swSource.includes("const CACHE='my-english-v61'"),'Service worker cache must be v61');
-for(const asset of ['./account-gate.js?v=61','./account-gate.css?v=61','./daily-course-v53.js?v=53','./sentence-coach-v55.js?v=55','./game-content-v56.js?v=56','./course-game-fixes-v59.js?v=59','./curriculum-variety-v60.js?v=60'])assert(swSource.includes(asset),`Service worker missing ${asset}`);
+assert(swSource.includes("const CACHE='my-english-v62'"),'Service worker cache must be v62');
+for(const asset of ['./account-gate.js?v=61','./account-gate.css?v=61','./daily-course-v53.js?v=53','./sentence-coach-v55.js?v=55','./game-content-v56.js?v=56','./game-difficulty-pre-v62.js?v=62','./course-game-fixes-v59.js?v=59','./curriculum-variety-v60.js?v=60','./institute-course-v62.js?v=62','./institute-course-v62.css?v=62'])assert(swSource.includes(asset),`Service worker missing ${asset}`);
 
-console.log(JSON.stringify({ok:true,rows:3000,stories:25,courseLessons:210,separateLearnerLogin:true,adminCreatesLearners:true,registrationClosed:true,profileIsolation:true,accountGateVersion:'v61',noContinuousObservers:true},null,2));
+console.log(JSON.stringify({ok:true,rows:3000,stories:25,courseLessons:210,separateLearnerLogin:true,adminCreatesLearners:true,registrationClosed:true,profileIsolation:true,accountGateVersion:'v61',instituteCourseVersion:'v62',noContinuousObservers:true},null,2));

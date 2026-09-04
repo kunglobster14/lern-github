@@ -53,3 +53,5 @@ jobs:
         run: node scripts/test-v71-quality.mjs
       - name: Audit V72 curriculum-first A1-B2 progression
         run: node scripts/test-v72.mjs
+      - name: Audit V72 teacher-led learning experience
+        run: node scripts/test-v72-experience.mjs

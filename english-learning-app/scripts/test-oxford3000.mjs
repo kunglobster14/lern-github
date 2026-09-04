@@ -19,7 +19,7 @@ assert.equal(rows.filter(r=>!String(get(r,'example',5)||r?.sentence||'').trim())
 assert.equal(rows.filter(r=>!/[ก-๙]/.test(String(get(r,'exampleThai',6)||r?.example_thai||r?.sentenceThai||''))).length,0,'Thai examples missing');
 assert.equal(new Set(rows.map((r,i)=>get(r,'id',0)??i+1)).size,3000,'Oxford IDs must be unique');
 
-const jsFiles=['learner-level-v53.js','daily-course-v53.js','sentence-coach-v55.js','game-content-v56.js','adaptive-games-v54.js','learning-experience-v55.js','curriculum-quality-v57.js','terminology-v58.js','game-difficulty-pre-v62.js','course-game-fixes-v59.js','curriculum-variety-v60.js','institute-course-v62.js','answer-integrity-v63.js','lesson-variety-v64.js','learning-guide.js','oxford3000-loader.js','oxford3000-core.js','core3000-study.js','core3000-library.js','oxford3000-practice.js','oxford3000-stories.js','oxford3000-story-upgrade.js','oxford3000-story-speed.js','core3000-plan.js','account-gate.js','account-admin.js'];
+const jsFiles=['learner-level-v53.js','daily-course-v53.js','sentence-coach-v55.js','game-content-v56.js','adaptive-games-v54.js','learning-experience-v55.js','curriculum-quality-v57.js','terminology-v58.js','game-difficulty-pre-v62.js','course-game-fixes-v59.js','curriculum-variety-v60.js','institute-course-v62.js','answer-integrity-v63.js','lesson-variety-v64.js','mastery-variety-v64b.js','interaction-quality-v65.js','learning-guide.js','oxford3000-loader.js','oxford3000-core.js','core3000-study.js','core3000-library.js','oxford3000-practice.js','oxford3000-stories.js','oxford3000-story-upgrade.js','oxford3000-story-speed.js','core3000-plan.js','account-gate.js','account-admin.js'];
 for(const file of jsFiles){const check=spawnSync(process.execPath,['--check',path.join(root,file)],{encoding:'utf8'});assert.equal(check.status,0,`${file} syntax error:\n${check.stderr||check.stdout}`)}
 
 const storySource=readFile('oxford3000-stories.js');
@@ -59,7 +59,7 @@ assert(variety.includes("const VERSION='v60'"),'Curriculum variety v60 missing')
 assert(variety.includes('Mini Response · เลือกประโยคให้ตรงความหมาย'),'v60 must preserve coherent Mini Response');
 assert(!variety.includes('MutationObserver'),'v60 must remain event-driven');
 
-const institute=readFile('institute-course-v62.js'),hardGame=readFile('game-difficulty-pre-v62.js'),answerIntegrity=readFile('answer-integrity-v63.js'),lessonVariety=readFile('lesson-variety-v64.js');
+const institute=readFile('institute-course-v62.js'),hardGame=readFile('game-difficulty-pre-v62.js'),answerIntegrity=readFile('answer-integrity-v63.js'),lessonVariety=readFile('lesson-variety-v64.js'),masteryVariety=readFile('mastery-variety-v64b.js'),interactionQuality=readFile('interaction-quality-v65.js');
 assert(institute.includes("const VERSION='v62'"),'Institute course v62 missing');
 assert(institute.includes('MASTERY_THRESHOLD=80'),'v62 mastery threshold must be 80');
 assert(institute.includes('Speaking Gate'),'v62 speaking gate missing');
@@ -71,10 +71,17 @@ assert(answerIntegrity.includes("const VERSION='v63'"),'Answer integrity v63 mis
 assert(lessonVariety.includes("const VERSION='v64'"),'Lesson variety v64 missing');
 assert(lessonVariety.includes('v64Sentence1')&&lessonVariety.includes('v64Sentence2'),'v64 two-sentence Production missing');
 assert(lessonVariety.includes('SpeechRecognition')&&lessonVariety.includes('พูดตาม'),'v64 speak-along missing');
+assert(masteryVariety.includes("const VERSION='v64b'"),'Mastery variety v64b missing');
+assert(interactionQuality.includes("const VERSION='v65'"),'Interaction quality v65 missing');
+assert(interactionQuality.includes('buildSeparatedMasteryV65'),'v65 separated mastery missing');
+assert(interactionQuality.includes('gameMinutesForDay'),'v65 timed games missing');
+assert(interactionQuality.includes('พูดเพื่อตอบ'),'v65 mic answer input missing');
 assert(!institute.includes('MutationObserver'),'v62 institute course must remain event-driven');
 assert(!hardGame.includes('MutationObserver'),'v62 hard games must remain event-driven');
 assert(!answerIntegrity.includes('MutationObserver'),'v63 answer integrity must remain event-driven');
 assert(!lessonVariety.includes('MutationObserver'),'v64 lesson variety must remain event-driven');
+assert(!masteryVariety.includes('MutationObserver'),'v64 mastery variety must remain event-driven');
+assert(!interactionQuality.includes('MutationObserver'),'v65 interaction quality must remain event-driven');
 
 const accountSource=readFile('account-gate.js');
 assert(accountSource.includes("const VERSION='v61'"),'Account gate must stay v61');
@@ -90,15 +97,16 @@ assert(adminSource.includes("action:'create-user'"),'Admin must be able to creat
 assert(adminSource.includes("action:'reset-password'"),'Admin must be able to reset learner passwords');
 
 const indexSource=readFile('index.html');
-for(const asset of ['account-gate.js?v=61','account-gate.css?v=61','daily-course-v53.js?v=53','sentence-coach-v55.js?v=55','game-content-v56.js?v=56','adaptive-games-v54.js?v=54','learning-experience-v55.js?v=55','curriculum-quality-v57.js?v=57','terminology-v58.js?v=58','game-difficulty-pre-v62.js?v=62','course-game-fixes-v59.js?v=59','curriculum-variety-v60.js?v=60','institute-course-v62.js?v=62','institute-course-v62.css?v=62','answer-integrity-v63.js?v=63','lesson-variety-v64.js?v=64','lesson-variety-v64.css?v=64'])assert(indexSource.includes(asset),`Index missing ${asset}`);
+for(const asset of ['account-gate.js?v=61','account-gate.css?v=61','daily-course-v53.js?v=53','sentence-coach-v55.js?v=55','game-content-v56.js?v=56','adaptive-games-v54.js?v=54','learning-experience-v55.js?v=55','curriculum-quality-v57.js?v=57','terminology-v58.js?v=58','game-difficulty-pre-v62.js?v=62','course-game-fixes-v59.js?v=59','curriculum-variety-v60.js?v=60','institute-course-v62.js?v=62','institute-course-v62.css?v=62','answer-integrity-v63.js?v=63','lesson-variety-v64.js?v=64','lesson-variety-v64.css?v=64','mastery-variety-v64b.js?v=64','interaction-quality-v65.js?v=65','interaction-quality-v65.css?v=65'])assert(indexSource.includes(asset),`Index missing ${asset}`);
 assert(indexSource.indexOf('game-difficulty-pre-v62.js?v=62')<indexSource.indexOf('course-game-fixes-v59.js?v=59'),'v62 game capture must load before v59 game capture');
 assert(indexSource.indexOf('institute-course-v62.js?v=62')>indexSource.indexOf('curriculum-variety-v60.js?v=60'),'v62 institute layer must load after v60 curriculum');
 assert(indexSource.indexOf('lesson-variety-v64.js?v=64')>indexSource.indexOf('answer-integrity-v63.js?v=63'),'v64 must load after v63');
+assert(indexSource.indexOf('interaction-quality-v65.js?v=65')>indexSource.indexOf('mastery-variety-v64b.js?v=64'),'v65 must load after v64 mastery');
 assert(indexSource.includes('>SENTENCE COACH</span>'),'Bottom nav must use SENTENCE COACH wording');
 assert(indexSource.includes('210 บทเรียน'),'Index must use lesson terminology');
 
 const swSource=readFile('sw.js');
-assert(swSource.includes("const CACHE='my-english-v64'"),'Service worker cache must be v64');
-for(const asset of ['./account-gate.js?v=61','./account-gate.css?v=61','./daily-course-v53.js?v=53','./sentence-coach-v55.js?v=55','./game-content-v56.js?v=56','./game-difficulty-pre-v62.js?v=62','./course-game-fixes-v59.js?v=59','./curriculum-variety-v60.js?v=60','./institute-course-v62.js?v=62','./institute-course-v62.css?v=62','./answer-integrity-v63.js?v=63','./lesson-variety-v64.js?v=64','./lesson-variety-v64.css?v=64'])assert(swSource.includes(asset),`Service worker missing ${asset}`);
+assert(swSource.includes("const CACHE='my-english-v65'"),'Service worker cache must be v65');
+for(const asset of ['./account-gate.js?v=61','./account-gate.css?v=61','./daily-course-v53.js?v=53','./sentence-coach-v55.js?v=55','./game-content-v56.js?v=56','./game-difficulty-pre-v62.js?v=62','./course-game-fixes-v59.js?v=59','./curriculum-variety-v60.js?v=60','./institute-course-v62.js?v=62','./institute-course-v62.css?v=62','./answer-integrity-v63.js?v=63','./lesson-variety-v64.js?v=64','./lesson-variety-v64.css?v=64','./mastery-variety-v64b.js?v=64','./interaction-quality-v65.js?v=65','./interaction-quality-v65.css?v=65'])assert(swSource.includes(asset),`Service worker missing ${asset}`);
 
-console.log(JSON.stringify({ok:true,rows:3000,stories:25,courseLessons:210,separateLearnerLogin:true,adminCreatesLearners:true,registrationClosed:true,profileIsolation:true,accountGateVersion:'v61',instituteCourseVersion:'v62',answerIntegrityVersion:'v63',lessonVarietyVersion:'v64',noContinuousObservers:true},null,2));
+console.log(JSON.stringify({ok:true,rows:3000,stories:25,courseLessons:210,separateLearnerLogin:true,adminCreatesLearners:true,registrationClosed:true,profileIsolation:true,accountGateVersion:'v61',instituteCourseVersion:'v62',answerIntegrityVersion:'v63',lessonVarietyVersion:'v64',interactionQualityVersion:'v65',noContinuousObservers:true},null,2));

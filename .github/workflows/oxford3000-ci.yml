@@ -41,3 +41,5 @@ jobs:
         run: node scripts/test-v65.mjs
       - name: Audit v67 unique lesson flows, quiz, and Final Voice hints
         run: node scripts/test-v67.mjs
+      - name: Audit v68 teach-before-test, Thai teacher clips, and no prompt reuse
+        run: node scripts/test-v68.mjs

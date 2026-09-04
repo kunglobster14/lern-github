@@ -26,12 +26,14 @@ assert(index.includes('course-game-fixes-v59.js?v=59'),'Index must load v59 afte
 assert(index.indexOf('game-difficulty-pre-v62.js?v=62')>index.indexOf('terminology-v58.js?v=58'),'v62 game policy must load after terminology');
 assert(index.indexOf('course-game-fixes-v59.js?v=59')>index.indexOf('game-difficulty-pre-v62.js?v=62'),'v62 game capture must run before v59 game capture');
 assert(index.includes('LOCAL · 210 บทเรียน'),'Top badge must use Thai lesson terminology');
+assert(index.includes('fun-lessons-v69.js?v=69'),'Index must activate V69 cartoon teacher');
 const sw=fs.readFileSync('sw.js','utf8');
-assert(sw.includes("const CACHE='my-english-v68'"),'Service worker cache must be v68');
+assert(sw.includes("const CACHE='my-english-v69'"),'Service worker cache must be v69');
 assert(sw.includes('./terminology-v58.js?v=58'),'Service worker must cache terminology v58');
 assert(sw.includes('./game-difficulty-pre-v62.js?v=62'),'Service worker must cache v62 game policy');
 assert(sw.includes('./course-game-fixes-v59.js?v=59'),'Service worker must cache v59 fixes');
 assert(sw.includes('./lesson-variety-v64.js?v=64'),'Service worker must cache v64 lesson variety');
 assert(sw.includes('./interaction-quality-v65.js?v=65'),'Service worker must cache v65 interaction quality');
-assert(sw.includes('./fun-lessons-v68.js?v=68'),'Service worker must cache v68 lessons');
-console.log(JSON.stringify({ok:true,version:'v58',dayUiRemoved:true,examples:['บทเรียนที่ 1','เลือกบทเรียน','บทเรียนถัดไป'],compatibleWith:'v68'},null,2));
+assert(sw.includes('./fun-lessons-v68.js?v=68'),'Service worker must cache v68 provider');
+assert(sw.includes('./fun-lessons-v69.js?v=69'),'Service worker must cache v69 cartoon teacher');
+console.log(JSON.stringify({ok:true,version:'v58',dayUiRemoved:true,examples:['บทเรียนที่ 1','เลือกบทเรียน','บทเรียนถัดไป'],compatibleWith:'v69'},null,2));

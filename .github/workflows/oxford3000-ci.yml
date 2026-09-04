@@ -51,3 +51,5 @@ jobs:
         run: node scripts/test-v71.mjs
       - name: Audit V71 semantic lesson quality and connected dialogue
         run: node scripts/test-v71-quality.mjs
+      - name: Audit V72 curriculum-first A1-B2 progression
+        run: node scripts/test-v72.mjs

@@ -55,3 +55,5 @@ jobs:
         run: node scripts/test-v72.mjs
       - name: Audit V72 teacher-led learning experience
         run: node scripts/test-v72-experience.mjs
+      - name: Audit V73 institute curriculum, four skills, and core 500
+        run: node scripts/test-v73.mjs

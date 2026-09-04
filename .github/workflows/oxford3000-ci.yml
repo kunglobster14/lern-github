@@ -35,3 +35,5 @@ jobs:
         run: node scripts/test-v62.mjs
       - name: Audit v63 answers across all 210 lessons
         run: node scripts/test-answer-integrity-v63.mjs
+      - name: Audit v64 production, speaking, and lesson variety
+        run: node scripts/test-v64.mjs

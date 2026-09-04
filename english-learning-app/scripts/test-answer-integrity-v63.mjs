@@ -38,17 +38,23 @@ assert.equal(legacyAudit.missingData.length,0,`Lessons with incomplete Quick Che
 assert.equal(legacyAudit.duplicateLabels.length,0,`Legacy Quick Checks with duplicate labels: ${JSON.stringify([...legacyAudit.duplicateLabels])}`);
 assert.equal(legacyAudit.allCorrect,true);
 
-let questionSets=0,questions=0;
-function checkSet(day,label,qs,expected){
+let questionSets=0,questions=0,rawBlankLabels=0,rawMissingCorrect=0,repairedBlankLabels=0,repairedMissingCorrect=0;
+function checkSet(day,label,rawQs,expected){
   questionSets++;
-  assert.equal(qs.length,expected,`${label} lesson ${day}: expected ${expected} questions, got ${qs.length}`);
-  for(const q of qs){
+  assert.equal(rawQs.length,expected,`${label} lesson ${day}: expected ${expected} questions, got ${rawQs.length}`);
+  for(const rawQ of rawQs){
     questions++;
+    const rawOptions=Array.isArray(rawQ.options)?rawQ.options:[];
+    rawBlankLabels+=rawOptions.filter(o=>!String(o?.label||'').trim()).length;
+    if(!rawOptions.some(o=>String(o?.id)===String(rawQ.correct)))rawMissingCorrect++;
+    const q=sandbox.sanitizeAssessmentQuestionV63(rawQ);
     assert(String(q.correct||'').trim(),`${label} lesson ${day}: missing correct key`);
     assert(Array.isArray(q.options)&&q.options.length>=2,`${label} lesson ${day}: too few options`);
-    assert(q.options.some(o=>String(o.id)===String(q.correct)),`${label} lesson ${day}: correct answer not present in options for ${q.type}`);
-    assert(q.options.every(o=>String(o.label||'').trim()),`${label} lesson ${day}: blank option label`);
-    assert.equal(new Set(q.options.map(o=>String(o.id))).size,q.options.length,`${label} lesson ${day}: duplicate option ids`);
+    if(!q.options.some(o=>String(o.id)===String(q.correct)))repairedMissingCorrect++;
+    repairedBlankLabels+=q.options.filter(o=>!String(o.label||'').trim()).length;
+    assert(q.options.some(o=>String(o.id)===String(q.correct)),`${label} lesson ${day}: correct answer not present after v63 repair for ${q.type}`);
+    assert(q.options.every(o=>String(o.label||'').trim()),`${label} lesson ${day}: blank option label remains after v63 repair`);
+    assert.equal(new Set(q.options.map(o=>String(o.id))).size,q.options.length,`${label} lesson ${day}: duplicate option ids after v63 repair`);
   }
 }
 
@@ -62,11 +68,15 @@ for(let day=1;day<=210;day++){
   checkSet(day,'Mastery attempt 1',sandbox.__answerQuestionSetV63(day,b,masteryCount,0),masteryCount);
   checkSet(day,'Mastery attempt 2',sandbox.__answerQuestionSetV63(day,b,masteryCount,1),masteryCount);
 }
+assert.equal(repairedMissingCorrect,0,'v63 left assessment questions without a correct option');
+assert.equal(repairedBlankLabels,0,'v63 left blank assessment option labels');
 
 const source=read('answer-integrity-v63.js');
 assert(source.includes("const VERSION='v63'"),'v63 answer guard missing');
 assert(source.includes("window.INSTITUTE_COURSE_VERSION==='v62'"),'v63 must prefer institute lessons over legacy 3/4 flow');
+assert(source.includes('sanitizeAssessmentQuestionV63'),'v63 assessment sanitizer export missing');
+assert(source.includes('repairInstituteQuestionsV63'),'v63 rendered assessment repair missing');
 assert(source.includes('auditAnswerIntegrityV63'),'v63 audit export missing');
 assert(!source.includes('MutationObserver'),'v63 must remain event-driven');
 
-console.log(JSON.stringify({ok:true,version:'v63',lessonsChecked:210,legacyQuickChecks:legacyAudit.legacyQuickChecks,legacyMissingCorrect:[...legacyAudit.missingCorrect],legacyDuplicateLabels:[...legacyAudit.duplicateLabels],questionSets,questions,instituteAnswersPresent:true},null,2));
+console.log(JSON.stringify({ok:true,version:'v63',lessonsChecked:210,legacyQuickChecks:legacyAudit.legacyQuickChecks,legacyMissingCorrect:[...legacyAudit.missingCorrect],legacyDuplicateLabels:[...legacyAudit.duplicateLabels],questionSets,questions,rawBlankLabels,rawMissingCorrect,repairedBlankLabels,repairedMissingCorrect,instituteAnswersPresent:true},null,2));

@@ -1,27 +1,31 @@
 import fs from 'node:fs';
+import path from 'node:path';
+import zlib from 'node:zlib';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
-const source=fs.readFileSync('fun-lessons-v68.js','utf8');
-const store=new Map(); class Element{}
-const levels=['A1','A2','B1','B2'];
-const oxford=Array.from({length:3000},(_,i)=>{const n=i+1,w=`oxford${n}`;return{id:n,word:w,thai:`คำอ็อกซ์ฟอร์ด${n}`,part:i%4===0?'n.':i%4===1?'v.':i%4===2?'adj.':'adv.',level:levels[i%4],example:`A unique Oxford example ${n} uses ${w} naturally.`,exampleThai:`ตัวอย่างอ็อกซ์ฟอร์ดเฉพาะหมายเลข ${n}`}});
-const patterns=[
- ['Greetings & Sounds','My name is ___.',`พบคนใหม่และแนะนำตัว`],
- ['Daily Routine','I ___ every day.',`เล่ากิจวัตร`],
- ['Present Continuous','I am ___ing now.',`บอกสิ่งที่กำลังทำ`],
- ['Past Simple','Yesterday I ___.',`เล่าเรื่องเมื่อวาน`],
- ['Future Plans','I am going to ___.',`พูดแผนพรุ่งนี้`],
- ['Home & Rooms','There is ___.',`บอกของในบ้าน`],
- ['Can, Requests & Ability','Can you ___, please?',`ขอความช่วยเหลือ`],
- ['Advice & Rules','You should ___.',`ให้คำแนะนำ`],
- ['Opinions & Reasons','I think ___ because ___.',`ให้ความคิดเห็น`],
- ['Storytelling','First... Then... Finally...',`เล่าเรื่องเป็นลำดับ`]
-];
-const fakeLesson=day=>{const [title,pattern,goal]=patterns[(day-1)%patterns.length];const focus=`focus${day}`;return{day,cefr:levels[(day-1)%4],title:`${title} ${day}`,goal,scenario:`สถานการณ์เฉพาะบท ${day}`,pattern,focusWord:{en:focus,th:`คำหลัก${day}`,part:'n.'},vocab:[{en:focus,th:`คำหลัก${day}`,part:'n.'},...Array.from({length:5},(_,i)=>({en:`repeat${i}`,th:`คำซ้ำ${i}`,part:'v.'}))],examplePairs:Array.from({length:4},(_,i)=>({en:`Core teaching example lesson ${day} number ${i+1}.`,th:`ตัวอย่างสอนบท ${day} ลำดับ ${i+1}`,word:focus,wordThai:`คำหลัก${day}`})),examples:[]}};
-const document={querySelector(){return null},querySelectorAll(){return[]},addEventListener(){},body:{appendChild(){}},createElement(){return{innerHTML:'',querySelector(){return null},querySelectorAll(){return[]},addEventListener(){},remove(){},setAttribute(){},appendChild(){},classList:{add(){},toggle(){}}}}};
-const sandbox={console,document,Element,Event:class{},CustomEvent:class{},localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,String(v))},getLearnerLevel:()=> 'starter',getDailyCourseProgress:()=>({currentDay:1,unlockedThrough:210,completed:[],startDay:1}),getDailyLesson:fakeLesson,getOxford3000:()=>oxford,ensureOxford3000:async()=>oxford,addEventListener(){},setTimeout(){return 0},clearTimeout(){},speechSynthesis:{cancel(){},speak(){}},SpeechSynthesisUtterance:class{},navigator:{}};sandbox.window=sandbox;
-vm.createContext(sandbox);vm.runInContext(source,sandbox,{filename:'fun-lessons-v68.js'});
+const root=path.resolve(process.cwd());
+const read=name=>fs.readFileSync(path.join(root,name),'utf8');
+const packs=['oxford3000-pack-01.js','oxford3000-pack-02.js','oxford3000-pack-03.js','oxford3000-pack-03b.js','oxford3000-pack-04.js','oxford3000-pack-05.js','oxford3000-pack-06.js','oxford3000-pack-07.js','oxford3000-pack-08.js'];
+let b64='';for(const name of packs){const m=read(name).match(/\+\s*'([A-Za-z0-9+/=]+)'\s*;?\s*$/);assert(m,`Cannot extract ${name}`);b64+=m[1]}
+const parsed=JSON.parse(zlib.gunzipSync(Buffer.from(b64,'base64')).toString('utf8'));
+const raw=Array.isArray(parsed)?parsed:(parsed.rows||parsed.data||parsed.words||parsed.items||[]);
+const rows=raw.map((r,i)=>Array.isArray(r)?{id:r[0]??i+1,word:r[1],part:r[2],level:r[3],thai:r[4],example:r[5],exampleThai:r[6]||''}:r);
+assert.equal(rows.length,3000);
+
+const store=new Map();class Element{}
+const document={documentElement:{classList:{contains:()=>false}},body:{contains:()=>false,appendChild(){}},head:{appendChild(){}},addEventListener(){},dispatchEvent(){},querySelector(){return null},querySelectorAll(){return[]},createElement(){return {textContent:'',innerHTML:'',style:{},appendChild(){},querySelector(){return null},querySelectorAll(){return[]},setAttribute(){},insertAdjacentElement(){},addEventListener(){},remove(){},classList:{add(){},toggle(){}}}},createTextNode(text){return{textContent:text}}};
+const levelInfo={label:'กลาง',cefr:'A2–B1',cefrLevels:['A2','B1']};
+const sandbox={console,document,Element,Event:class{},CustomEvent:class{constructor(type,init){this.type=type;this.detail=init?.detail}},localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,String(v))},getLearnerLevel:()=> 'intermediate',getLearnerLevelInfo:()=>levelInfo,getOxford3000:()=>rows,ensureOxford3000:async()=>rows,getDailyCourseProgress:()=>({currentDay:71,unlockedThrough:210,completed:[],startDay:71}),addEventListener(){},setTimeout(fn){if(typeof fn==='function')fn();return 0},clearTimeout(){},requestAnimationFrame(fn){if(typeof fn==='function')fn();return 0},speechSynthesis:{cancel(){},speak(){}},SpeechSynthesisUtterance:class{},navigator:{}};
+sandbox.window=sandbox;vm.createContext(sandbox);
+vm.runInContext(read('daily-course-v53.js'),sandbox,{filename:'daily-course-v53.js'});
+vm.runInContext(read('curriculum-quality-v57.js'),sandbox,{filename:'curriculum-quality-v57.js'});
+vm.runInContext(read('course-game-fixes-v59.js'),sandbox,{filename:'course-game-fixes-v59.js'});
+vm.runInContext(read('curriculum-variety-v60.js'),sandbox,{filename:'curriculum-variety-v60.js'});
+await Promise.resolve();await Promise.resolve();await new Promise(r=>setImmediate(r));
+vm.runInContext(read('fun-lessons-v68.js'),sandbox,{filename:'fun-lessons-v68.js'});
+await Promise.resolve();await Promise.resolve();await new Promise(r=>setImmediate(r));
+
 const audit=sandbox.auditFunLessonsV68();
 assert.equal(audit.version,'v68');
 assert.equal(audit.totalLessons,210);
@@ -41,15 +45,30 @@ assert.equal(audit.teacherClipSlides,5);
 assert.equal(audit.thaiNarration,true);
 assert.equal(audit.animationStorage,'static-code-no-database');
 assert.equal(audit.ok,true);
-const d=sandbox.getFunLessonDataV68(1);
-assert.equal(d.blueprint.stages[0].code,'clip');
-assert.equal(d.blueprint.stages[1].code,'words');
-assert.equal(d.blueprint.stages[2].code,'grammar');
-assert.equal(d.blueprint.stages[3].code,'model');
-assert.equal(d.blueprint.stages[4].code,'guided');
-assert.equal(d.blueprint.stages[5].code,'produce');
-assert.equal(d.quiz.length,8);
-assert(source.includes("u.lang='th-TH'"));
-assert(source.includes('TEACH BEFORE TEST'));
-assert(source.includes('คลิปนี้สร้างด้วยข้อความ + Animation + เสียงจากอุปกรณ์ ไม่ใช่ไฟล์วิดีโอ'));
-console.log(JSON.stringify({ok:true,version:'v68',lessons:210,teachStages:1260,vocab:audit.uniqueVocabularyWords,examples:audit.uniqueExamples,teacherClipSlides:5,thaiNarration:true,quiz:'6/8',teachQuizLeaks:0,finalVoiceCopies:0,databaseVideoStorage:false},null,2));
+
+for(let day=1;day<=210;day++){
+  const d=sandbox.getFunLessonDataV68(day);
+  assert.equal(d.lesson.contentVersion,'v68',`Lesson ${day} is not v68`);
+  assert.equal(d.lesson.vocab.length,6,`Lesson ${day} must have 6 unique words`);
+  assert.equal(d.lesson.examplePairs.length,8,`Lesson ${day} must have 8 unique example pairs`);
+  assert.deepEqual(Array.from(d.blueprint.stages,x=>x.code),['clip','words','grammar','model','guided','produce'],`Lesson ${day} must teach before testing`);
+  assert.equal(d.quiz.length,8,`Lesson ${day} quiz count`);
+  const taught=new Set(d.lesson.examplePairs.slice(0,4).map(x=>String(x.en).toLowerCase().trim()));
+  for(const q of d.quiz){
+    if(q.audio)assert(!taught.has(String(q.audio).toLowerCase().trim()),`Lesson ${day} reuses taught audio in quiz`);
+    if(typeof q.c==='string')assert(!taught.has(String(q.c).toLowerCase().trim()),`Lesson ${day} reuses taught answer sentence in quiz`);
+  }
+}
+
+const grammarChecks={1:'intro',36:'present',64:'continuous',71:'past',78:'future'};
+for(const [day,kind] of Object.entries(grammarChecks))assert.equal(sandbox.getFunLessonDataV68(Number(day)).grammar.kind,kind,`Lesson ${day} grammar should be ${kind}`);
+const source=read('fun-lessons-v68.js'),css=read('fun-lessons-v68.css');
+assert(source.includes("u.lang='th-TH'"),'Thai narration voice missing');
+assert(source.includes('TEACH BEFORE TEST'),'Teach-before-test UI missing');
+assert(source.includes('teacherClipWatched'),'Teacher clip progress missing');
+assert(source.includes('databaseVideoStorage:false'),'Database-free video design flag missing');
+assert(css.includes('@keyframes v68Float')&&css.includes('@keyframes v68Wave')&&css.includes('@keyframes v68Sweep'),'Animated teacher clip CSS missing');
+assert(css.includes('prefers-reduced-motion'),'Reduced-motion accessibility missing');
+assert(!source.includes('MutationObserver'),'v68 must remain event-driven');
+
+console.log(JSON.stringify({ok:true,version:'v68',realCurriculum:true,lessons:210,teachStages:1260,uniqueVocabularyWords:audit.uniqueVocabularyWords,uniqueExamples:audit.uniqueExamples,teacherClipSlides:5,thaiNarration:true,grammarChecks,quiz:'6/8',teachQuizExactLeaks:0,finalVoiceCopies:0,databaseVideoStorage:false},null,2));

@@ -27,53 +27,7 @@ vm.runInContext(read('fun-lessons-v68.js'),sandbox,{filename:'fun-lessons-v68.js
 await Promise.resolve();await Promise.resolve();await new Promise(r=>setImmediate(r));
 vm.runInContext(read('fun-lessons-v69.js'),sandbox,{filename:'fun-lessons-v69.js'});
 await Promise.resolve();await new Promise(r=>setImmediate(r));
-
 const audit=sandbox.auditFunLessonsV69();
-assert.equal(audit.version,'v69');
-assert.equal(audit.totalLessons,210);
-assert.equal(audit.totalTeachingStages,1260);
-assert.equal(audit.cartoonLessons,210);
-assert.equal(audit.thaiTeacherLessons,210);
-assert.equal(audit.cartoonsPerLesson,3);
-assert.equal(audit.inlineSvgCartoons,true);
-assert.equal(audit.animatedCartoons,true);
-assert.equal(audit.thaiNarration,true);
-assert.equal(audit.teachBeforeTest,true);
-assert.equal(audit.grammarBeforeQuiz,true);
-assert.equal(audit.fourSkillsBeforeQuiz,true);
-assert.equal(audit.quizQuestions,8);
-assert.equal(audit.quizPass,6);
-assert.equal(audit.quizBad.length,0);
-assert.equal(audit.teachingQuizExactLeaks.length,0);
-assert.equal(audit.databaseMediaStorage,false);
-assert.equal(audit.ok,true);
-
-for(let day=1;day<=210;day++){
-  const data=sandbox.getFunLessonDataV68(day);
-  assert.equal(data.lesson.vocab.length,6,`Lesson ${day} must keep 6 unique words`);
-  assert.equal(data.lesson.examplePairs.length,8,`Lesson ${day} must keep 8 examples`);
-  assert.equal(data.quiz.length,8,`Lesson ${day} quiz count`);
-  const bp=await sandbox.buildFunLessonBlueprintV69(day);
-  assert.deepEqual(Array.from(bp.stages,x=>x.code),['intro','words','grammar','dialogue','skills','practice'],`Lesson ${day} V69 teaching order`);
-  assert.equal(bp.cartoons.length,3,`Lesson ${day} must include teacher and two students`);
-  assert.equal(bp.thaiInstruction,true,`Lesson ${day} must teach in Thai`);
-  assert.equal(bp.teacherNarration,true,`Lesson ${day} must have Thai teacher narration`);
-}
-
-const source=read('fun-lessons-v69.js'),css=read('fun-lessons-v69.css'),index=read('index.html'),sw=read('sw.js');
-assert(source.includes("const V='v69'"),'V69 engine missing');
-assert(source.includes("const sayTh=t=>speak(t,'th-TH')"),'Thai narration missing');
-assert(source.includes('aria-label="ครูการ์ตูน"'),'Teacher SVG missing');
-assert(source.includes('aria-label="นักเรียนการ์ตูน"'),'Student SVG missing');
-assert(source.includes('ครูเมย์'),'Thai teacher character missing');
-assert(source.includes('ก่อนสอบ'),'Teach-before-test copy missing');
-assert(source.includes('databaseMediaStorage:false'),'Media storage must stay out of database');
-assert(!source.includes('MutationObserver'),'V69 must remain event-driven');
-assert(css.includes('@keyframes v69bob'),'Cartoon movement missing');
-assert(css.includes('@keyframes v69blink'),'Cartoon blink missing');
-assert(css.includes('.v69-dialogue-scene'),'Cartoon dialogue styling missing');
-assert(index.includes('fun-lessons-v69.css?v=69')&&index.includes('fun-lessons-v69.js?v=69'),'Production index must load V69');
-assert(index.indexOf('fun-lessons-v69.js?v=69')<index.indexOf('fun-lessons-v68.js?v=68'),'V69 click handler must register before V68');
-assert(sw.includes("const CACHE='my-english-v69'"),'PWA cache must be V69');
-assert(sw.includes('./fun-lessons-v69.css?v=69')&&sw.includes('./fun-lessons-v69.js?v=69'),'PWA must cache V69 assets');
-console.log(JSON.stringify({ok:true,version:'v69',realCurriculum:true,lessons:210,teachingStages:1260,cartoonLessons:210,cartoonsPerLesson:3,thaiTeacher:true,grammarBeforeQuiz:true,fourSkillsBeforeQuiz:true,quiz:'6/8',databaseMediaStorage:false},null,2));
+assert.equal(audit.version,'v69');assert.equal(audit.totalLessons,210);assert.equal(audit.totalTeachingStages,1260);assert.equal(audit.cartoonLessons,210);assert.equal(audit.thaiTeacherLessons,210);assert.equal(audit.cartoonsPerLesson,3);assert.equal(audit.inlineSvgCartoons,true);assert.equal(audit.animatedCartoons,true);assert.equal(audit.thaiNarration,true);assert.equal(audit.teachBeforeTest,true);assert.equal(audit.grammarBeforeQuiz,true);assert.equal(audit.fourSkillsBeforeQuiz,true);assert.equal(audit.quizQuestions,8);assert.equal(audit.quizPass,6);assert.equal(audit.quizBad.length,0);assert.equal(audit.teachingQuizExactLeaks.length,0);assert.equal(audit.databaseMediaStorage,false);assert.equal(audit.ok,true);
+for(let day=1;day<=210;day++){const data=sandbox.getFunLessonDataV68(day);assert.equal(data.lesson.vocab.length,6);assert.equal(data.lesson.examplePairs.length,8);assert.equal(data.quiz.length,8);const bp=await sandbox.buildFunLessonBlueprintV69(day);assert.deepEqual(Array.from(bp.stages,x=>x.code),['intro','words','grammar','dialogue','skills','practice']);assert.equal(bp.cartoons.length,3);assert.equal(bp.thaiInstruction,true);assert.equal(bp.teacherNarration,true)}
+const source=read('fun-lessons-v69.js'),css=read('fun-lessons-v69.css'),index=read('index.html'),sw=read('sw.js');assert(source.includes("const V='v69'"));assert(source.includes("const sayTh=t=>speak(t,'th-TH')"));assert(source.includes('aria-label="ครูการ์ตูน"'));assert(source.includes('aria-label="นักเรียนการ์ตูน"'));assert(source.includes('ครูเมย์'));assert(source.includes('ก่อนสอบ'));assert(source.includes('databaseMediaStorage:false'));assert(!source.includes('MutationObserver'));assert(css.includes('@keyframes v69bob'));assert(css.includes('@keyframes v69blink'));assert(css.includes('.v69-dialogue-scene'));assert(index.includes('fun-lessons-v69.css?v=69')&&index.includes('fun-lessons-v69.js?v=69'));assert(index.includes('fun-lessons-v70.js?v=70'));assert(index.indexOf('fun-lessons-v70.js?v=70')<index.indexOf('fun-lessons-v69.js?v=69'));assert(index.indexOf('fun-lessons-v69.js?v=69')<index.indexOf('fun-lessons-v68.js?v=68'));assert(sw.includes("const CACHE='my-english-v70'"));assert(sw.includes('./fun-lessons-v69.css?v=69')&&sw.includes('./fun-lessons-v69.js?v=69'));console.log(JSON.stringify({ok:true,version:'v69',realCurriculum:true,lessons:210,teachingStages:1260,cartoonLessons:210,cartoonsPerLesson:3,thaiTeacher:true,grammarBeforeQuiz:true,fourSkillsBeforeQuiz:true,quiz:'6/8',databaseMediaStorage:false,compatibleWith:'v70'},null,2));

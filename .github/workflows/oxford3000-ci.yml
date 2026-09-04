@@ -39,5 +39,5 @@ jobs:
         run: node scripts/test-v64.mjs
       - name: Audit v65 separated mastery, timed games, and mic answers
         run: node scripts/test-v65.mjs
-      - name: Audit v66 fun institute lesson missions
-        run: node scripts/test-v66.mjs
+      - name: Audit v67 unique lesson flows, quiz, and Final Voice hints
+        run: node scripts/test-v67.mjs

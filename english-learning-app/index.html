@@ -34,6 +34,29 @@
     <nav class="bottom-nav" aria-label="เมนูหลัก"><button class="nav-btn active" data-view="home" type="button"><span class="nav-ico">⌂</span><span>หน้าแรก</span></button><button class="nav-btn" data-view="learn" type="button"><span class="nav-ico">Aa</span><span>คำศัพท์</span></button><button class="nav-btn nav-ai" data-view="ai" type="button"><span class="nav-ai-orb">✍</span><span>SENTENCE COACH</span></button><button class="nav-btn" data-view="review" type="button"><span class="nav-ico">↻</span><span>ทบทวน</span></button><button class="nav-btn" data-view="progress" type="button"><span class="nav-ico">◫</span><span>สถิติ</span></button></nav>
   </div>
   <dialog id="profileDialog"><form method="dialog" id="profileForm" class="dialog-card"><div class="dialog-handle"></div><div class="mini-orb">👋</div><h2>ผู้เรียนและข้อมูลของฉัน</h2><p>ข้อมูลหลักเก็บอยู่ในอุปกรณ์นี้ก่อน จึงใช้งานได้โดยไม่เสียค่าฐานข้อมูล</p><div class="local-tools"><span class="tool-label">โปรไฟล์บนอุปกรณ์นี้</span><div class="profile-switch"><select id="profileSelect" aria-label="เลือกโปรไฟล์ผู้เรียน"></select><button id="addProfileBtn" class="mini-btn" type="button">+ เพิ่ม</button></div></div><label for="nameInput">ชื่อเล่นของโปรไฟล์นี้</label><input id="nameInput" maxlength="30" autocomplete="nickname" placeholder="เช่น กุ้ง"><div class="utility-grid"><button id="exportBackupBtn" class="utility-btn" type="button">⬇ สำรองข้อมูล</button><button id="importBackupBtn" class="utility-btn" type="button">⬆ นำเข้าข้อมูล</button><button id="installAppBtn" class="utility-btn" type="button">📱 ติดตั้งแอป</button></div><input id="backupFileInput" type="file" accept="application/json,.json" hidden><p class="zero-cost-note">LOCAL MODE: แบบฝึกหลักทำงานในแอปโดยไม่ใช้โควตาบริการภายนอก</p><div class="dialog-actions"><button value="cancel" class="secondary-btn">ปิด</button><button value="default" class="primary-btn">บันทึกชื่อ</button></div></form></dialog>
+  <script>
+  (()=>{
+    const TOTAL=210;
+    const SELECTOR='[data-v62-lesson],[data-choose-day],[data-skill-lesson],#dailyOpenLesson,#dailyComplete,[data-day],.day-card,.course-day-card,[data-lesson-day]';
+    function currentDay(){try{return +(window.getDailyCourseProgress?.().currentDay||1)}catch{return 1}}
+    function lessonDay(el){
+      const raw=el?.dataset?.v62Lesson||el?.dataset?.chooseDay||el?.dataset?.skillLesson||el?.dataset?.day||el?.dataset?.lessonDay||el?.getAttribute?.('data-day');
+      const day=+(raw||currentDay());
+      return day>=1&&day<=TOTAL?day:0;
+    }
+    function routeLesson(e){
+      const el=e.target?.closest?.(SELECTOR);if(!el||el.disabled)return;
+      const open=window.openDailyLessonV72;if(typeof open!=='function')return;
+      const day=lessonDay(el);if(!day)return;
+      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+      try{if(el.matches?.('[data-v62-lesson],[data-choose-day],[data-skill-lesson]'))window.chooseDailyLesson?.(day)}catch{}
+      try{el.closest?.('dialog')?.close?.()}catch{}
+      open(day);
+    }
+    window.addEventListener('click',routeLesson,true);
+    window.LESSON_ROUTER_V73={version:'v73-router1',totalLessons:TOTAL,priority:'before-v68',active:true};
+  })();
+  </script>
   <script src="app.js?v=33"></script>
   <script src="account-gate.js?v=61"></script>
   <script src="account-admin.js?v=33"></script>

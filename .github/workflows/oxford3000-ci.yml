@@ -57,3 +57,5 @@ jobs:
         run: node scripts/test-v72-experience.mjs
       - name: Audit V73 institute curriculum, four skills, and core 500
         run: node scripts/test-v73.mjs
+      - name: Audit V75 varied end-of-lesson assessments across all 210 lessons
+        run: node scripts/test-v75-assessment.mjs

@@ -1,0 +1,41 @@
+(()=>{
+const VERSION='v75-assessment1',TOTAL=210,QUIZ=8,PASS=6;
+const norm=x=>String(x||'').toLowerCase().normalize('NFKC').replace(/[^\p{L}\p{N}' ]+/gu,' ').replace(/\s+/g,' ').trim();
+const escText=x=>String(x??'').trim();
+const uniq=(a,key=x=>norm(x))=>{const seen=new Set();return(a||[]).filter(x=>{const k=key(x);if(!k||seen.has(k))return false;seen.add(k);return true})};
+function rng(day){let x=(Number(day)*2654435761)>>>0;return()=>{x=(1664525*x+1013904223)>>>0;return x/4294967296}}
+function shuffle(a,day){const out=[...a],r=rng(day);for(let i=out.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[out[i],out[j]]=[out[j],out[i]]}return out}
+function lessonMeta(day,data){const v73=window.getInstituteCurriculumV73?.(day)||window.getCurriculumV72?.(day)||{};const l=data?.lesson||{};return{title:v73.title||l.title||`L${day}`,goal:v73.goal||l.goal||'',scenario:v73.scenario||l.scenario||'',grammar:v73.grammar||l.pattern||'',lessonType:v73.lessonType||['Foundation','Language Builder','Listening Lab','Speaking Workshop','Reading & Writing Studio','Real-life Challenge'][(day-1)%6],level:v73.level||l.cefr||''}}
+function testPairs(data){return (data?.lesson?.examplePairs||[]).slice(4,8).filter(x=>x?.en&&x?.th)}
+function vocab(data){return (data?.lesson?.vocab||[]).filter(x=>x?.en&&x?.th)}
+function choices(correct,alts,seed){const c=escText(correct),pool=uniq([...(alts||[])].map(escText).filter(Boolean));let out=[c,...shuffle(pool.filter(x=>norm(x)!==norm(c)),seed).slice(0,3)];while(out.length<4)out.push(`ตัวเลือก ${out.length+1}`);return shuffle(uniq(out).slice(0,4),seed+97)}
+function wordOrderOptions(sentence,day){const words=escText(sentence).split(/\s+/).filter(Boolean);const out=[words.join(' ')];for(let k=1;k<=5&&out.length<4;k++){
+ const x=[...words];if(x.length>2){const a=(day+k)%x.length,b=(day+k*3+1)%x.length;[x[a],x[b]]=[x[b],x[a]]}else x.reverse();
+ const s=x.join(' ');if(!out.some(y=>norm(y)===norm(s)))out.push(s)
+}
+while(out.length<4)out.push(`${words.slice(1).join(' ')} ${words[0]}`.trim());return shuffle(uniq(out).slice(0,4),day+211)}
+function gapTask(pair,vs,day){const words=escText(pair.en).split(/\s+/);let idx=words.findIndex(w=>vs.some(v=>norm(v.en)===norm(w)));if(idx<0)idx=Math.min(Math.max(1,Math.floor(words.length/2)),Math.max(0,words.length-1));const answer=(words[idx]||vs[0]?.en||'').replace(/[^\p{L}\p{N}'-]/gu,'');words[idx]='_____';const distractors=vs.map(v=>v.en).filter(x=>norm(x)!==norm(answer));return{p:`เติมคำให้ประโยคสมบูรณ์: ${words.join(' ')}`,c:answer,o:choices(answer,distractors,day+301)}}
+function grammarOptions(correct,day){const pool=['Subject + V1(s/es) + ...','Subject + am/is/are + V-ing','Subject + V2 + ...','Subject + will + V1','There is/are + noun','Subject + can/should + V1','Question word + auxiliary + subject + ...?','My/Your + noun + is + ...','I would like + noun/to V1'];return choices(correct,pool,day+401)}
+function build(day,data){day=Math.max(1,Math.min(TOTAL,+day||1));const ps=testPairs(data),vs=vocab(data),m=lessonMeta(day,data);if(ps.length<4||vs.length<4)return data?.quiz||[];const [p4,p5,p6,p7]=ps;const [v0,v1,v2,v3,v4,v5]=vs;const tasks={
+ vocabMeaning:()=>({taskType:'vocab-meaning',p:`ในบริบทของ ${m.title} คำว่า “${v3?.en||v0.en}” หมายถึงอะไร?`,c:v3?.th||v0.th,o:choices(v3?.th||v0.th,vs.map(v=>v.th),day+1)}),
+ vocabReverse:()=>({taskType:'vocab-reverse',p:`เลือกคำอังกฤษที่ตรงกับ “${v4?.th||v1.th}”`,c:v4?.en||v1.en,o:choices(v4?.en||v1.en,vs.map(v=>v.en),day+2)}),
+ sentenceMeaning:()=>({taskType:'sentence-meaning',p:`อ่านประโยคแล้วเลือกความหมายที่ตรงที่สุด: “${p4.en}”`,c:p4.th,o:choices(p4.th,ps.map(p=>p.th),day+3)}),
+ sentenceOrder:()=>({taskType:'sentence-order',p:`เรียงคำให้เป็นประโยคที่ถูกต้องสำหรับบท ${day}`,c:p5.en,o:wordOrderOptions(p5.en,day)}),
+ gapWord:()=>({taskType:'gap-word',...gapTask(p6,vs,day)}),
+ grammarFocus:()=>({taskType:'grammar-focus',p:`โครงสร้างใดเหมาะกับเป้าหมาย “${m.goal||m.title}” มากที่สุด?`,c:m.grammar||'Subject + useful phrase',o:grammarOptions(m.grammar||'Subject + useful phrase',day)}),
+ scenarioChoice:()=>({taskType:'scenario-choice',p:`สถานการณ์: ${m.scenario||m.title} หากต้องการสื่อว่า “${p7.th}” ควรพูดข้อใด?`,c:p7.en,o:choices(p7.en,ps.map(p=>p.en),day+7)}),
+ readingDetail:()=>({taskType:'reading-detail',p:`อ่านข้อความสั้น: “${p4.en} ${p5.en}” ข้อใดเป็นข้อความที่ปรากฏอยู่จริง?`,c:p4.en,o:choices(p4.en,[p5.en,p6.en,p7.en],day+8)}),
+ pairMatch:()=>{const correct=`${p5.en} = ${p5.th}`;const alts=[`${p5.en} = ${p6.th}`,`${p6.en} = ${p7.th}`,`${p7.en} = ${p4.th}`];return{taskType:'pair-match',p:'คู่ประโยคอังกฤษ–ไทยข้อใดตรงกัน?',c:correct,o:choices(correct,alts,day+9)}},
+ intentChoice:()=>({taskType:'intent-choice',p:`ผู้พูดกล่าวว่า “${p6.en}” เขาต้องการสื่อความหมายใด?`,c:p6.th,o:choices(p6.th,[p4.th,p5.th,p7.th],day+10)}),
+ bestExpression:()=>({taskType:'best-expression',p:`สำหรับบทประเภท ${m.lessonType} เลือกประโยคที่สื่อว่า “${p4.th}” ได้ตรงที่สุด`,c:p4.en,o:choices(p4.en,[p5.en,p6.en,p7.en],day+11)}),
+ contextWord:()=>{const pair=p7;const candidate=vs.find(v=>new RegExp(`\\b${String(v.en).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\b`,'i').test(pair.en))||v2||v0;return{taskType:'context-word',p:`คำใดจากบทนี้สัมพันธ์กับประโยค “${pair.en}” มากที่สุด?`,c:candidate.en,o:choices(candidate.en,vs.map(v=>v.en),day+12)}}
+};
+const names=Object.keys(tasks),order=shuffle(names,day).slice(0,QUIZ),quiz=order.map(name=>tasks[name]());return quiz.map((q,i)=>({...q,id:`L${day}-Q${i+1}-${q.taskType}`,assessmentVersion:VERSION,lessonCode:`L${day}`}))}
+function wrapProvider(provider){if(typeof provider!=='function')return provider;return day=>{const data=provider(day);if(!data?.lesson)return data;return{...data,quiz:build(day,data),assessmentV75:{version:VERSION,lessonCode:`L${day}`,quizQuestions:QUIZ,pass:PASS,separateFromTeaching:true}}}}
+const baseFun=window.getFunLessonDataV68;if(typeof baseFun==='function')window.getFunLessonDataV68=wrapProvider(baseFun);
+const baseCurr=window.getCurriculumLessonV72;if(typeof baseCurr==='function')window.getCurriculumLessonV72=wrapProvider(baseCurr);
+window.buildAssessmentV75=(day,data)=>build(day,data||baseCurr?.(day)||baseFun?.(day));
+window.ASSESSMENT_V75={version:VERSION,totalLessons:TOTAL,quizQuestions:QUIZ,pass:PASS,taskTypes:12,structuralVariation:true};
+window.auditAssessmentV75=()=>{const promptMap=new Map(),quizSig=new Map(),structSig=new Map(),coverage=new Set(),bad=[];for(let d=1;d<=TOTAL;d++){const data=(window.getCurriculumLessonV72?.(d)||window.getFunLessonDataV68?.(d));const qs=data?.quiz||[];if(qs.length!==QUIZ)bad.push(d);const prompts=qs.map(q=>norm(q.p));prompts.forEach(p=>promptMap.set(p,(promptMap.get(p)||0)+1));const exact=qs.map(q=>`${norm(q.p)}|${norm(q.c)}`).join('||');quizSig.set(exact,(quizSig.get(exact)||0)+1);const struct=qs.map(q=>q.taskType||'legacy').join('>');structSig.set(struct,(structSig.get(struct)||0)+1);qs.forEach(q=>coverage.add(q.taskType));}
+const dup=m=>[...m.entries()].filter(([,n])=>n>1);return{version:VERSION,totalLessons:TOTAL,quizQuestions:QUIZ,pass:PASS,taskTypeCoverage:coverage.size,exactPromptDuplicates:dup(promptMap).length,exactQuizDuplicates:dup(quizSig).length,structuralQuizDuplicates:dup(structSig).length,badLessons:bad,ok:coverage.size===12&&!dup(promptMap).length&&!dup(quizSig).length&&!dup(structSig).length&&!bad.length}}
+})();

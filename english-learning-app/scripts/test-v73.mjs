@@ -18,7 +18,7 @@ for(const file of ['core-vocab-v73.js','curriculum-institute-v73.js']){
 const core=context.window.CORE_VOCAB_500_V73;
 assert.equal(core.total,500,'Core vocabulary must contain exactly 500 words');
 assert.equal(new Set(core.words.map(x=>x.word.toLowerCase())).size,500,'Core 500 words must be unique');
-assert.deepEqual(core.levelBands.map(x=>x.count),[220,150,90,40]);
+assert.deepEqual(JSON.parse(JSON.stringify(core.levelBands.map(x=>x.count))),[220,150,90,40]);
 assert.equal(core.levelBands.reduce((s,x)=>s+x.count,0),500);
 
 const seeds=new Set(),objectives=new Set();let introduced=[];
@@ -46,4 +46,4 @@ assert.equal(seeds.size,210);
 assert.equal(objectives.size,210);
 assert.equal(context.window.INSTITUTE_CURRICULUM_V73.modules,35);
 assert.equal(context.window.INSTITUTE_CURRICULUM_V73.lessonsPerModule,6);
-console.log(JSON.stringify({version:'v73',lessons:210,modules:35,coreWords:500,lessonStart:'L1',fourSkills:true,quiz:'8/pass6',uniqueObjectives:objectives.size},null,2));
+console.log(JSON.stringify({version:'v73',lessons:210,modules:35,coreWords:500,lessonStart:'L1',fourSkills:true,quiz:'8/pass6',uniqueObjectives:objectives.size,vmRealmSafe:true},null,2));

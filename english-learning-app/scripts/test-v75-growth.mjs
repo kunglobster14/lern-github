@@ -63,9 +63,10 @@ assert.equal(types.size,14,'all fourteen V75 assessment task types must appear')
 assert(modes.has('choice')&&modes.has('listen')&&modes.has('read')&&modes.has('input')&&modes.has('order'),'assessment must use multiple interaction modes');
 const audit=window.auditCurriculumV75();assert.equal(audit.totalLessons,210);assert.equal(audit.badLessons.length,0);assert.equal(audit.distinctAssessmentSignatures,210);assert.equal(audit.ok,true);
 
-const experience=read('lesson-experience-v75.js'),index=read('index.html'),sw=read('sw.js');
+const curriculum=read('curriculum-v75.js'),experience=read('lesson-experience-v75.js'),index=read('index.html'),sw=read('sw.js');
+for(const marker of ['Listening Mission','Speaking Goal','Reading & Writing Goal','Mission Brief'])assert(curriculum.includes(marker),`missing V75 curriculum marker: ${marker}`);
 assert(experience.includes("const V='v75-experience'"));
-for(const marker of ['Listening Mission','Speaking Goal','Reading & Writing Goal','Mission Brief','data-listen','data-mic','Final Voice · Transfer'])assert(experience.includes(marker),`missing V75 experience marker: ${marker}`);
+for(const marker of ['data-listen','data-mic','Final Voice · Transfer'])assert(experience.includes(marker),`missing V75 experience marker: ${marker}`);
 assert(!experience.includes('MutationObserver'));
 assert(index.includes("document.documentElement.classList.add('account-locked')"),'registration lock must remain');
 for(const asset of ['curriculum-v75.js?v=75g','lesson-experience-v75.js?v=75g'])assert(index.includes(asset)&&sw.includes(`./${asset}`),`V75 asset missing from startup/cache: ${asset}`);

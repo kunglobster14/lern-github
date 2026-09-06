@@ -59,3 +59,5 @@ jobs:
         run: node scripts/test-v73.mjs
       - name: Audit V75 varied end-of-lesson assessments across all 210 lessons
         run: node scripts/test-v75-assessment.mjs
+      - name: Audit V75 progressive learning growth and role-specific lessons
+        run: node scripts/test-v75-growth.mjs

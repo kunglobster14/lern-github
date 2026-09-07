@@ -1,0 +1,42 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const read=name=>fs.readFileSync(new URL(`../${name}`,import.meta.url),'utf8');
+const level=d=>d<=54?'A1':d<=108?'A2':d<=162?'B1':'B2';
+function base(day){return{lesson:{day,lessonCode:`L${day}`,title:`Old ${day}`,goal:'old goal',scenario:'old scenario',pattern:'old pattern',vocab:[],teachingPairs:[],testPairs:[],sections:[]},assessment:[],quiz:[]}}
+const oxford=Array.from({length:500},(_,i)=>({word:`core${i+1}`,thai:`คำ${i+1}`,part:'word'}));
+const window={getCurriculumLessonV75:base,getCurriculumLessonV72:base,getOxford3000:()=>oxford,getCoreVocabV73:day=>({newWords:[{word:`core${(day%400)+1}`}],reviewWords:[{word:`core${((day+50)%400)+1}`}]})};
+const context={window,console};vm.createContext(context);vm.runInContext(read('grammar-toeic-v76.js'),context,{filename:'grammar-toeic-v76.js'});
+assert.equal(window.GRAMMAR_TOEIC_V76.version,'v76-grammar-toeic');
+assert.equal(window.GRAMMAR_TOEIC_V76.totalLessons,210);
+assert.equal(window.GRAMMAR_TOEIC_V76.totalUnits,35);
+assert.equal(window.GRAMMAR_TOEIC_V76.toeicFormat.totalQuestions,200);
+assert.equal(window.GRAMMAR_TOEIC_V76.toeicFormat.listening.questions,100);
+assert.equal(window.GRAMMAR_TOEIC_V76.toeicFormat.reading.questions,100);
+const units=new Set(),titles=new Set(),types=new Set(),bad=[];
+for(let d=1;d<=210;d++){
+ const x=window.getCurriculumLessonV76(d),l=x.lesson;
+ assert.equal(l.lessonCode,`L${d}`);
+ assert.equal(l.level,level(d));
+ assert.equal(l.module,Math.ceil(d/6));
+ assert.equal(l.sections.length,8);
+ assert.equal(l.teachingPairs.length,4);
+ assert.equal(x.assessment.length,8);
+ assert(l.note.includes('TRICK:'));
+ assert(x.meta.grammarFirst&&x.meta.toeicAligned);
+ x.assessment.forEach(q=>{assert(q.type&&q.mode&&q.prompt&&q.answer);types.add(q.type)});
+ units.add(l.module);titles.add(l.title);
+ if(l.title.includes('Old '))bad.push(d);
+}
+assert.equal(units.size,35);
+assert.equal(titles.size,210);
+assert.equal(bad.length,0);
+for(const t of ['toeic-part1','toeic-part2','toeic-part3','toeic-part4','toeic-part5','toeic-part6','toeic-part7-detail','toeic-part7-inference'])assert(types.has(t),`missing ${t}`);
+for(const d of [1,54,55,108,109,162,163,210])assert.equal(window.getCurriculumLessonV76(d).lesson.level,level(d));
+const audit=window.auditGrammarToeicV76();assert.equal(audit.lessons,210);assert.equal(audit.units,35);assert.equal(audit.uniqueTitles,210);assert.equal(audit.ok,true);
+const index=read('index.html'),sw=read('sw.js');
+assert(index.includes("document.documentElement.classList.add('account-locked')"));
+assert(index.includes('grammar-toeic-v76.js?v=76'));
+assert(sw.includes('./grammar-toeic-v76.js?v=76'));
+assert(index.indexOf('lesson-experience-v75.js?v=75g')<index.indexOf('grammar-toeic-v76.js?v=76'));
+console.log(JSON.stringify({ok:true,version:'v76-grammar-toeic',lessons:210,units:35,uniqueTitles:titles.size,assessmentTypes:[...types].sort(),toeicQuestions:200,registrationClosed:true},null,2));

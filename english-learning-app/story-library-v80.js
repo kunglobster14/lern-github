@@ -25,3 +25,10 @@ r.querySelectorAll('.v80-vocab').forEach(b=>b.onclick=()=>{const th=b.dataset.th
 dlg.querySelector('.v80-story-close').onclick=()=>{stop();dlg.close()};dlg.querySelectorAll('[data-story]').forEach(b=>b.onclick=()=>{stop();draw(+b.dataset.story)});dlg.addEventListener('close',()=>{stop();dlg.remove()});draw(id);try{dlg.showModal()}catch{dlg.setAttribute('open','')}return true}
 window.openStoryLibraryV80=open;window.STORY_LIBRARY_V80={version:V,count:STORIES.length,categories:[...new Set(STORIES.map(x=>x.category))],stories:STORIES,wordRange:[150,200],noScore:true};
 })();
+
+(()=>{
+  const files=['classic-games-v85.js?v=85','game-home-v85.js?v=85','story-vocab-integrity-v85.js?v=85'];
+  const load=i=>{if(i>=files.length)return;const src=files[i];if([...document.scripts].some(s=>String(s.src||'').includes(src.split('?')[0]))){load(i+1);return}const s=document.createElement('script');s.src=src;s.async=false;s.onload=()=>load(i+1);s.onerror=()=>load(i+1);document.head.appendChild(s)};
+  load(0);
+  window.V85_RUNTIME_LOADER={version:'v85-runtime-loader',files};
+})();

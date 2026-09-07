@@ -1,0 +1,8 @@
+(()=>{
+const VERSION='v85-classic-game-home';
+const GAMES=[['match','🧩','Word Match','จับคู่คำกับความหมาย'],['builder','🧱','Sentence Builder','เรียงคำเป็นประโยค'],['listen','🎧','Listening Hunt','ฟังแล้วเลือกคำตอบ'],['sprint','⚡','Flash Sprint','แข่งกับเวลา'],['rush','🏃','Meaning Rush','ตอบต่อเนื่อง'],['gap','🔤','Missing Word','เติมคำในประโยค'],['translate','🇹🇭','Thai → English','แปลเป็นประโยคอังกฤษ'],['memory','🧠','Memory Flip','จับคู่ความจำ'],['dialog','🗣️','Survival Dialog','สถานการณ์สนทนา'],['spell','👂','Spell by Ear','ฟังแล้วสะกด'],['trap','🎭','True or Trap','จริงหรือหลอก']];
+function patch(){const grid=document.querySelector('.v80-game-grid');if(!grid||grid.dataset.v85==='1')return false;grid.dataset.v85='1';grid.innerHTML=GAMES.map(([id,ico,name,desc])=>`<button class="v80-game-card" data-v85-game="${id}" type="button"><b>${ico} ${name}</b><small>${desc}</small></button>`).join('');grid.querySelectorAll('[data-v85-game]').forEach(b=>b.onclick=()=>window.openClassicGameV85?.(b.dataset.v85Game));const panel=grid.closest('.v80-panel');const kicker=panel?.querySelector('.v80-kicker');if(kicker)kicker.textContent='CLASSIC GAME LAB · 11 รูปแบบ · เลือกระดับได้';const h2=panel?.querySelector('h2');if(h2)h2.textContent='เกมแบบเดิม · ฝึกคำ ประโยค ฟัง และสนทนา';return true}
+function run(){[0,60,180,450,900].forEach(ms=>setTimeout(patch,ms))}
+document.addEventListener('app:rendered',run);document.addEventListener('v81-game-level',run);window.addEventListener('DOMContentLoaded',run);setTimeout(run,300);
+window.GAME_HOME_V85={version:VERSION,gameTypes:GAMES.length,classicStructure:true};
+})();

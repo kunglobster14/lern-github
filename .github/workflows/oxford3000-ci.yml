@@ -73,3 +73,5 @@ jobs:
         run: node scripts/test-v79-narrators.mjs
       - name: Audit V80 simplified stories and non-repeating vocabulary games
         run: node scripts/test-v80-simplified.mjs
+      - name: Audit V83 story opening stability and iOS narration
+        run: node scripts/test-v83-story-stability.mjs

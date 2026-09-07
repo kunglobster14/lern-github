@@ -65,3 +65,5 @@ jobs:
         run: node scripts/test-v76-grammar-toeic.mjs
       - name: Audit V76 TOEIC assessment variety across all 210 lessons
         run: node scripts/test-v76-toeic-variety.mjs
+      - name: Audit V77 detailed Grammar Academy lessons and remove legacy home menus
+        run: node scripts/test-v77-detailed-lessons.mjs

@@ -71,3 +71,5 @@ jobs:
         run: node scripts/test-v78-course-novel.mjs
       - name: Audit V79 lesson character narrators and gender-mapped voices
         run: node scripts/test-v79-narrators.mjs
+      - name: Audit V80 simplified stories and non-repeating vocabulary games
+        run: node scripts/test-v80-simplified.mjs

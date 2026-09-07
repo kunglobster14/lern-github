@@ -43,6 +43,6 @@ assert(home.includes('gameDifficultyInsideGames:true'),'game difficulty must rem
 for(let i=1;i<=5;i++){const asset=`story-depth-v84-${i}.js?v=84`;assert(index.includes(asset),`index missing ${asset}`);assert(sw.includes(`./${asset}`),`SW missing ${asset}`)}
 for(const asset of ['story-depth-v84.js?v=84','oxford3000-story-speed-v84.js?v=84','vocab-games-v80.js?v=81']){assert(index.includes(asset),`index missing ${asset}`);assert(sw.includes(`./${asset}`),`SW missing ${asset}`)}
 assert(!index.includes('oxford3000-story-speed.js?v=83'),'old narration runtime must not execute');
-assert(sw.includes("const CACHE='my-english-v84-immersive1'"),'fresh V84 service-worker cache missing');
+assert(sw.includes("const CACHE='my-english-v84-immersive1'")||sw.includes("const CACHE='my-english-v85-classic-story1'"),'V84/V85 service-worker cache missing');
 assert(index.includes("document.documentElement.classList.add('account-locked')"),'registration must remain closed');
 console.log(JSON.stringify({ok:true,version:'v84-immersive-reader',stories:titles.length,first15MinAddedBlocks:4,final10MinAddedBlocks:6,contrast:'high',narrationSpeeds:['0.45x','0.65x','0.82x'],gameTypes:8,gameLevels:['A1','A2','B1','B2','MIX'],gamesPreserved:true},null,2));

@@ -61,3 +61,5 @@ jobs:
         run: node scripts/test-v75-assessment.mjs
       - name: Audit V75 progressive learning growth and role-specific lessons
         run: node scripts/test-v75-growth.mjs
+      - name: Audit V76 grammar-first TOEIC curriculum and Parts 1-7
+        run: node scripts/test-v76-grammar-toeic.mjs

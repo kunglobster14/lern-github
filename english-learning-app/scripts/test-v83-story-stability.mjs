@@ -1,0 +1,20 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {spawnSync} from 'node:child_process';
+const read=n=>fs.readFileSync(new URL(`../${n}`,import.meta.url),'utf8');
+const index=read('index.html'),sw=read('sw.js'),home=read('simplified-home-v80.js'),depth=read('story-depth-v83.js'),audio=read('oxford3000-story-speed.js');
+for(const f of ['simplified-home-v80.js','story-depth-v83.js','oxford3000-story-speed.js']){const c=spawnSync(process.execPath,['--check',new URL(`../${f}`,import.meta.url).pathname],{encoding:'utf8'});assert.equal(c.status,0,`${f} syntax error: ${c.stderr||c.stdout}`)}
+assert(index.includes('oxford3000-story-speed.js?v=83'),'index must force fresh V83 audio');
+assert(index.includes('story-depth-v83.js?v=83'),'safe story depth must be loaded');
+assert(!index.includes('<script src="story-depth-v81.js?v=81"></script>'),'buggy V81 story depth must not execute');
+assert(index.includes('simplified-home-v80.js?v=83'),'stable home must be cache-busted');
+assert(sw.includes('./story-depth-v81.js?v=81'),'old expansion source must stay cached as data only');
+for(const a of ['./story-depth-v83.js?v=83','./oxford3000-story-speed.js?v=83','./simplified-home-v80.js?v=83'])assert(sw.includes(a),`SW missing ${a}`);
+assert(home.includes("globalMutationObserver:false"),'home must declare global observer disabled');
+assert(!home.includes('new MutationObserver('),'home must not observe the entire DOM');
+assert(home.includes("label&&label.textContent!=='Oxford 3000'"),'nav text writes must be guarded');
+assert(depth.includes('safeObserver:true')&&depth.includes('guardedTextMutation:true'),'safe depth markers missing');
+assert(depth.includes("if(em&&em.textContent!==target)em.textContent=target"),'story-card text mutation must be idempotent');
+assert(depth.includes('if(scheduled)return')&&depth.includes('requestAnimationFrame'),'story patching must be frame-throttled');
+assert(audio.includes("VERSION='v82-ios-story-audio'")&&audio.includes('englishVoice()')&&audio.includes('กำลังเตรียมเสียง'),'iOS narration safeguards missing');
+console.log(JSON.stringify({ok:true,version:'v83-story-stability',buggyStoryObserverLoaded:false,homeGlobalObserver:false,guardedStoryMutations:true,audioCacheBusted:true},null,2));

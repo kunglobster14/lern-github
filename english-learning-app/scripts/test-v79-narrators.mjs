@@ -13,11 +13,13 @@ assert(index.includes('lesson-narrators-v79.js?v=79'),'V79 narrators must load i
 assert(index.indexOf('lesson-experience-v77.js?v=77d')<index.indexOf('lesson-narrators-v79.js?v=79'),'V79 must load after V77');
 for(const asset of ['./lesson-narrators-v79.js?v=79','./teacher-may-v79.svg?v=79','./student-pete-v79.svg?v=79'])assert(sw.includes(asset),`SW missing ${asset}`);
 for(const [name,svg] of [['teacher',may],['student',pete]]){assert(svg.includes('data:image/jpeg;base64,'),`${name} portrait must embed generated art`);assert(svg.includes('<image'),`${name} portrait missing image`)}
-for(const marker of ['v79b-thai-narrator-fix','chooseThai','directImage','thaiText','speechSynthesis.cancel','u.lang=\'th-TH\'','data:image\\/(?:jpeg|jpg|png)','OLD_AUTO'])assert(fix.includes(marker),`missing V79b fix marker: ${marker}`);
-assert(index.includes('lesson-narrator-fix-v79b.js?v=79b'),'V79b hotfix must load in production');
-assert(index.indexOf('lesson-narrators-v79.js?v=79')<index.indexOf('lesson-narrator-fix-v79b.js?v=79b'),'V79b must load after V79');
-assert(sw.includes('./lesson-narrator-fix-v79b.js?v=79b'),'SW must cache V79b hotfix');
-assert(fix.includes("if(!xs.length)return null"),'Thai narration must not fall back to an English voice');
-assert(fix.includes("fetch(path+'?v=79b'"),'V79b must extract the embedded JPG directly instead of rendering nested SVG image data');
+for(const marker of ['v79c-strict-thai-voice','waitThaiVoice','thaiVoices','noEnglishFallbackForThai:true','patchV77Thai','directImage','thaiText','speechSynthesis.cancel','OLD_AUTO_B'])assert(fix.includes(marker),`missing strict Thai voice marker: ${marker}`);
+assert(index.includes('lesson-narrator-fix-v79b.js?v=79b'),'strict Thai hotfix must load in production');
+assert(index.indexOf('lesson-narrators-v79.js?v=79')<index.indexOf('lesson-narrator-fix-v79b.js?v=79b'),'strict Thai hotfix must load after V79');
+assert(sw.includes('./lesson-narrator-fix-v79b.js?v=79b'),'SW must cache strict Thai hotfix');
+assert(fix.includes("if(!v){")&&fix.includes('ระบบจะไม่ใช้เสียงอังกฤษแทน'),'Thai narration must refuse English fallback when Thai voice is unavailable');
+assert(fix.includes("u.voice=v")&&fix.includes("u.lang=String(v.lang||'th-TH')"),'Thai narration must explicitly bind a Thai voice before speaking');
+assert(fix.includes("fetch(path+'?v=79c'"),'character image extraction should bypass stale cache');
+assert(fix.includes("#lessonV77 [data-th]"),'legacy Thai explanation buttons must be rebound to strict Thai narration');
 assert(index.includes("document.documentElement.classList.add('account-locked')"),'registration must remain closed');
-console.log(JSON.stringify({ok:true,version:'v79b-thai-narrator-fix',teacher:'ครูเมย์',student:'พีท',thaiNarration:true,englishVoiceFallbackBlocked:true,directCharacterImages:true,genderMappedVoices:true,autoNarration:true,lessonStages:8,registrationClosed:true},null,2));
+console.log(JSON.stringify({ok:true,version:'v79c-strict-thai-voice',teacher:'ครูเมย์',student:'พีท',thaiNarration:true,waitsForThaiVoice:true,englishVoiceFallbackBlocked:true,legacyThaiButtonsPatched:true,directCharacterImages:true,genderMappedVoices:true,autoNarration:true,lessonStages:8,registrationClosed:true},null,2));

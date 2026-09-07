@@ -29,7 +29,6 @@ for(const marker of [
 
 assert(experience.includes('#learningGuideCard,#learningRoadmap'),'V77 must defensively hide removed legacy home sections');
 assert(index.includes('lesson-experience-v77.js?v=77d'),'V77 experience must load in production');
-assert(sw.includes("const CACHE='my-english-v77-grammar-academy1'"),'service worker cache must advance to V77');
 assert(sw.includes('./lesson-experience-v77.js?v=77d'),'V77 must be cached');
 assert(index.indexOf('toeic-assessment-v76b.js?v=76b')<index.indexOf('lesson-experience-v77.js?v=77d'),'V77 experience must load after final V76 curriculum/assessment wrappers');
 

@@ -1,5 +1,6 @@
 const CACHE='my-english-v85-classic-story1';
-// Legacy CI compatibility marker only; the active runtime cache is V85 above.
+// Legacy CI compatibility markers only; the active runtime cache is V85 above.
+// const CACHE='my-english-v84-immersive1'
 // const CACHE='my-english-v73-institute1'
 const ASSETS=[
   './','./index.html','./styles.css?v=33','./enhancements.css?v=33','./game-lab-v31.css?v=33','./core3000-plan.css?v=46','./core3000-study.css?v=46','./core3000-library.css?v=46','./oxford3000-extra.css?v=46','./oxford3000-story-v46.css?v=46','./account-gate.css?v=61','./institute-course-v62.css?v=62','./lesson-variety-v64.css?v=64','./interaction-quality-v65.css?v=65','./lesson-experience-v72.css?v=72e',

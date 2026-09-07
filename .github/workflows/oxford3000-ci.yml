@@ -75,3 +75,5 @@ jobs:
         run: node scripts/test-v80-simplified.mjs
       - name: Audit V83 story opening stability and iOS narration
         run: node scripts/test-v83-story-stability.mjs
+      - name: Audit V84 immersive stories, contrast, slower narration, and game preservation
+        run: node scripts/test-v84-immersive-reader.mjs

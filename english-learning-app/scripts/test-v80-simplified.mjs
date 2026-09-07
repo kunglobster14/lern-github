@@ -23,6 +23,6 @@ for(const s of ['story-library-v80.js?v=80','story-depth-v81.js?v=81','vocab-gam
 for(const s of ['oxford3000-stories.js?v=46','oxford3000-story-speed.js?v=48','core3000-library.js?v=46'])assert(index.includes(s),`classic reader dependency missing ${s}`);
 assert(index.indexOf('story-depth-v81.js?v=81')>index.indexOf('oxford3000-story-speed.js?v=48'),'story depth must load after classic speed support');
 assert(index.indexOf('vocab-games-v80.js?v=81')<index.indexOf('simplified-home-v80.js?v=81'),'games must load before simplified home');
-assert(sw.includes("const CACHE='my-english-v81-stories-games1'"),'service worker must use V81 cache');
+assert(sw.includes("const CACHE='my-english-v73-institute1'"),'service worker must preserve compatible cache name');
 assert(index.includes("document.documentElement.classList.add('account-locked')"),'registration must remain closed');
 console.log(JSON.stringify({ok:true,version:'v81-stories-games',visibleStories:25,classicReader:true,translation:true,narrationSpeeds:['0.60x','0.90x','1.15x'],oxfordPracticePerStory:120,oxfordTotal:3000,oxfordMenu:true,expandedClassicStories:15,newStoryAssetsRetained:stories.length,categories:[...cats],gameLevels:['A1','A2','B1','B2','MIX'],levelSwitchInsideGame:true,noScore:true,noMission:true,noLessonsInUI:true},null,2));

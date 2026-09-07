@@ -9,12 +9,15 @@ for(const id of ['match','builder','listen','sprint','rush','gap','translate','m
 for(const lvl of ['A1','A2','B1','B2','MIX'])assert(games.includes(`${lvl}:`),`missing level ${lvl}`);
 assert(games.includes('noXP:true')&&games.includes('noMission:true')&&games.includes('classicStructure:true')&&games.includes('nonRepeatOxford:true'));
 assert(home.includes('gameTypes:GAMES.length')&&home.includes('CLASSIC GAME LAB · 11 รูปแบบ'));
-for(const marker of ['correctAnswerAutoPronunciation:true','replayButton:true','data-v85-replay','rate:.72'])assert(audio.includes(marker),`audio feedback missing ${marker}`);
+for(const marker of ['correctAnswerAutoPronunciation:true','replayButton:true','data-v85-replay','rate:.72','successTone:true','bubbleAfterAnswer:true','sameGestureSpeech:true','correctOnlyPatch:true','memoryPairAudio:true','rushAudio:true'])assert(audio.includes(marker),`audio feedback missing ${marker}`);
+assert(audio.includes("document.addEventListener('click',onClick,false)"),'correct-answer speech must run in bubble phase after the game answer handler');
+assert(!audio.includes('setTimeout(()=>'),'correct-answer speech must not be deferred outside the user gesture');
 assert(integrity.includes('actualOxford(root)')&&integrity.includes("querySelectorAll('.story-authored-sentence')"));
 assert(integrity.includes('glossaryFromActualStoryText:true')&&integrity.includes('randomPracticeRemoved:true'));
 for(const f of ['story-depth-v85-data.js?v=85','story-integrity-v85.js?v=85','classic-games-v85.js?v=85','game-home-v85.js?v=85','game-audio-v85b.js?v=85b']){assert(loader.includes(f),`loader missing ${f}`);assert(sw.includes(`./${f}`),`service worker missing ${f}`)}
+assert(sw.includes("const CACHE='my-english-v85-classic-story2'"),'fresh V85 game-audio cache missing');
 const ctx={window:{}};vm.createContext(ctx);new vm.Script(read('story-depth-v85-data.js')).runInContext(ctx);const data=ctx.window.STORY_DEPTH_V85_MORE||{},titles=Object.keys(data);assert.equal(titles.length,25,'V85 must extend all 25 stories');
 const finalTen=['The Girl Who Found a Map','The Underground Garden','Flight 207','The Snow Cabin',"The Photographer's Last Picture",'The Clock Tower Code','The Empty Stadium','The Island Without Phones','The Box from Bangkok','The Road Beyond the City'];
 const words=t=>(String(t).match(/[A-Za-z]+(?:['’][A-Za-z]+)?/g)||[]).length;
 for(const [title,blocks] of Object.entries(data)){assert(Array.isArray(blocks)&&blocks.length>0,`${title}: no V85 chapter`);if(finalTen.includes(title))assert(blocks.length>=2,`${title}: final ten needs at least 2 extra scenes`);for(const [en,th] of blocks){assert(words(en)>=65,`${title}: extra scene too short (${words(en)})`);assert(/[ก-๙]/.test(th),`${title}: Thai translation missing`)}}
-console.log(JSON.stringify({ok:true,version:'v85b',classicGames:11,levels:5,stories:titles.length,glossary:'actual-story-text',finalTenExtraScenes:2,correctAnswerAudio:true,replay:true,noXP:true,noMission:true},null,2));
+console.log(JSON.stringify({ok:true,version:'v85c',classicGames:11,levels:5,stories:titles.length,glossary:'actual-story-text',finalTenExtraScenes:2,correctAnswerAudio:true,sameGestureSpeech:true,successTone:true,replay:true,noXP:true,noMission:true},null,2));

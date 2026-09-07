@@ -1,0 +1,23 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const read=n=>fs.readFileSync(new URL(`../${n}`,import.meta.url),'utf8');
+const ctx={window:{}};vm.createContext(ctx);
+for(let i=1;i<=5;i++)new vm.Script(read(`story-pack-v80-${i}.js`),{filename:`story-pack-v80-${i}.js`}).runInContext(ctx);
+const stories=Array.from({length:5},(_,i)=>ctx.window[`STORY_PACK_V80_${i+1}`]).flat();
+assert.equal(stories.length,25,'V80 must ship exactly 25 stories');
+assert.deepEqual(stories.map(x=>x.id),Array.from({length:25},(_,i)=>i+1),'story ids must be 1-25');
+const cats=new Set(stories.map(x=>x.category));
+for(const c of ['Fantasy','Thriller','Adventure','Sci-Fi','Supernatural'])assert(cats.has(c),`missing story category ${c}`);
+for(const s of stories){const wc=(s.text.match(/[A-Za-z]+(?:['’][A-Za-z]+)?/g)||[]).length;assert(wc>=150&&wc<=200,`${s.id} ${s.title} must be 150-200 words, got ${wc}`);assert.equal(wc,s.wordCount,`${s.title} stored wordCount mismatch`)}
+const lib=read('story-library-v80.js'),games=read('vocab-games-v80.js'),home=read('simplified-home-v80.js'),index=read('index.html'),sw=read('sw.js');
+for(const marker of ['v80-story-library','25 ORIGINAL STORIES','Oxford 3000','wordRange:[150,200]'])assert(lib.includes(marker),`missing library marker ${marker}`);
+for(const marker of ['v80-vocab-games','A1','A2','B1','B2','MIX','nonRepeatCycle:true','persistentCycle:true','noXP:true','myEnglishV2.v80GameCycle'])assert(games.includes(marker),`missing games marker ${marker}`);
+for(const marker of ['v80-simplified-home','lessonsRemovedFromUI:true','missionsRemoved:true','scoreRemoved:true','dailyPracticeRemoved:true','topLevelSelectorRemoved:true','gameDifficultyInsideGames:true','LOCAL · STORIES + GAMES'])assert(home.includes(marker),`missing simplified marker ${marker}`);
+const scripts=[...Array.from({length:5},(_,i)=>`story-pack-v80-${i+1}.js?v=80`),'story-library-v80.js?v=80','vocab-games-v80.js?v=80','simplified-home-v80.js?v=80'];
+for(const s of scripts)assert(index.includes(s),`index missing ${s}`);
+for(const s of scripts)assert(sw.includes(`./${s}`),`SW missing ${s}`);
+assert(index.indexOf('story-pack-v80-1.js?v=80')<index.indexOf('story-library-v80.js?v=80'),'story packs must load before library');
+assert(index.indexOf('vocab-games-v80.js?v=80')<index.indexOf('simplified-home-v80.js?v=80'),'games must load before simplified home');
+assert(index.includes("document.documentElement.classList.add('account-locked')"),'registration must remain closed');
+console.log(JSON.stringify({ok:true,version:'v80-simplified-stories-games',stories:stories.length,categories:[...cats],wordRange:[Math.min(...stories.map(x=>x.wordCount)),Math.max(...stories.map(x=>x.wordCount))],gameLevels:['A1','A2','B1','B2','MIX'],noScore:true,noMission:true,noLessonsInUI:true},null,2));

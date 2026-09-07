@@ -63,3 +63,5 @@ jobs:
         run: node scripts/test-v75-growth.mjs
       - name: Audit V76 grammar-first TOEIC curriculum and Parts 1-7
         run: node scripts/test-v76-grammar-toeic.mjs
+      - name: Audit V76 TOEIC assessment variety across all 210 lessons
+        run: node scripts/test-v76-toeic-variety.mjs

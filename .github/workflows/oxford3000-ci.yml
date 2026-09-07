@@ -79,3 +79,5 @@ jobs:
         run: node scripts/test-v84-immersive-reader.mjs
       - name: Audit V85 classic games and story vocabulary integrity
         run: node scripts/test-v85-classic-games-stories.mjs
+      - name: Audit V85 reliable sentence translation and four slower audio speeds
+        run: node scripts/test-v85-story-sentence-controls.mjs

@@ -67,3 +67,5 @@ jobs:
         run: node scripts/test-v76-toeic-variety.mjs
       - name: Audit V77 detailed Grammar Academy lessons and remove legacy home menus
         run: node scripts/test-v77-detailed-lessons.mjs
+      - name: Audit V78 curriculum menu and Oxford 3000 serial novel
+        run: node scripts/test-v78-course-novel.mjs

@@ -77,3 +77,5 @@ jobs:
         run: node scripts/test-v83-story-stability.mjs
       - name: Audit V84 immersive stories, contrast, slower narration, and game preservation
         run: node scripts/test-v84-immersive-reader.mjs
+      - name: Audit V85 classic games and story vocabulary integrity
+        run: node scripts/test-v85-classic-games-stories.mjs

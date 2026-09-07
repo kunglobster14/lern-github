@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const read=n=>fs.readFileSync(new URL(`../${n}`,import.meta.url),'utf8');
+const novel=read('oxford-novel-v78.js'),home=read('academy-home-v78.js'),index=read('index.html'),sw=read('sw.js');
+new vm.Script(novel,{filename:'oxford-novel-v78.js'});new vm.Script(home,{filename:'academy-home-v78.js'});
+const ctx={window:{},localStorage:{getItem:()=>null,setItem:()=>{}},speechSynthesis:{cancel(){},getVoices(){return[]},speak(){}},SpeechSynthesisUtterance:function(t){this.text=t}};ctx.window.window=ctx.window;vm.createContext(ctx);vm.runInContext(novel,ctx);
+const data=ctx.window.OXFORD_NOVEL_V78;assert(data,'novel export missing');assert.equal(data.version,'v78-oxford-novel');assert.equal(data.chapters.length,10);assert.equal(data.originalContent,true);const count=t=>(String(t).match(/[A-Za-z]+(?:['’][A-Za-z]+)?/g)||[]).length;for(const [i,ch] of data.chapters.entries()){const n=count(ch.text);assert(n>=150&&n<=200,`chapter ${i+1} has ${n} words`);assert(ch.summary&&ch.thai&&ch.title)}
+for(const marker of ['MAIN COURSE · GRAMMAR ACADEMY + TOEIC','หลักสูตรบทเรียน 210 บท','เปิดหลักสูตรทั้งหมด','35 UNITS × 6 LESSONS','window.openGrammarAcademyMenuV78','window.openOxfordNovelV78'])assert(home.includes(marker),`missing home marker ${marker}`);assert(home.includes('Array.from({length:35}'));assert(home.includes('data-v78-day'));assert(home.includes('courseMenuFloatV78'));
+for(const asset of ['oxford-novel-v78.js?v=78','academy-home-v78.js?v=78']){assert(index.includes(asset),`index missing ${asset}`);assert(sw.includes(`./${asset}`),`sw missing ${asset}`)}assert(index.indexOf('lesson-experience-v77.js?v=77d')<index.indexOf('oxford-novel-v78.js?v=78'));assert(index.indexOf('oxford-novel-v78.js?v=78')<index.indexOf('academy-home-v78.js?v=78'));
+console.log(JSON.stringify({ok:true,version:'v78',courseMenu:{lessons:210,units:35},novel:{title:data.title,chapters:data.chapters.length,wordCounts:data.chapters.map(x=>count(x.text)),target:'150-200 words/chapter'}},null,2));
